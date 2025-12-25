@@ -3,45 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBanana AI | Peel the Noise, Extract the Alpha</title>
+    <title>MyBanana AI | Peel the Noise</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --bg-dark: #121212;
-            --discord-purple: #7289DA;
-            --text-grey: #B9BBBE;
-        }
-
+        :root { --bg-dark: #121212; --discord-purple: #7289DA; --text-grey: #B9BBBE; }
         body {
             margin: 0; height: 100vh; display: flex; flex-direction: column;
             justify-content: center; align-items: center;
             background-color: var(--bg-dark); color: var(--text-grey);
             font-family: 'Inter', sans-serif; overflow: hidden;
         }
-
         .banana-core {
-            width: 260px; height: 260px;
+            width: 240px; height: 240px;
             background: linear-gradient(45deg, #f39c12, #f1c40f);
             border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
             box-shadow: 0 0 60px rgba(241, 196, 15, 0.3);
             transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
             animation: morph 8s ease-in-out infinite;
         }
-
-        .active { transform: scale(1.1); filter: brightness(1.1); }
-
         @keyframes morph {
             0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
             50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
         }
-
-        #status-container { margin-top: 50px; text-align: center; max-width: 80%; min-height: 60px; }
-        #status-text { font-size: 1.1rem; color: #FFFFFF; opacity: 0.9; transition: opacity 0.5s; line-height: 1.5; }
+        #status-container { margin-top: 40px; text-align: center; max-width: 85%; }
+        #status-text { font-size: 1.15rem; color: #FFFFFF; font-weight: 300; line-height: 1.6; margin-bottom: 20px; }
+        
+        /* 地址框样式 */
+        #addr-display {
+            background: rgba(255,255,255,0.05);
+            padding: 8px 15px; border-radius: 20px;
+            font-family: 'Courier New', monospace; font-size: 0.85rem;
+            color: var(--discord-purple); cursor: pointer;
+            transition: 0.3s; border: 1px solid rgba(114, 137, 218, 0.2);
+            display: inline-block;
+        }
+        #addr-display:hover { background: rgba(114, 137, 218, 0.1); transform: scale(1.05); }
 
         .footer-links { position: fixed; bottom: 40px; display: flex; gap: 30px; }
-        .footer-links a { color: var(--text-grey); font-size: 1.5rem; transition: 0.3s; opacity: 0.6; }
-        .footer-links a:hover { color: var(--discord-purple); opacity: 1; transform: translateY(-5px); }
+        .footer-links a { color: var(--text-grey); font-size: 1.5rem; transition: 0.3s; opacity: 0.5; }
+        .footer-links a:hover { color: var(--discord-purple); opacity: 1; }
     </style>
 </head>
 <body>
@@ -49,22 +50,25 @@
     <div class="banana-core" id="ball"></div>
 
     <div id="status-container">
-        <div id="status-text">Scanning the chain for the ripest alpha...</div>
+        <div id="status-text">Listening to the pulse of Solana...</div>
+        <div id="addr-display" onclick="copyAddr()">Waiting for Signal...</div>
     </div>
 
     <div class="footer-links">
-        <a href="mailto:cgcisco@gmail.com" title="Email"><i class="fa-regular fa-envelope"></i></a>
-        <a href="https://discord.gg/YOUR_INVITE" target="_blank" title="Discord"><i class="fa-brands fa-discord"></i></a>
+        <a href="mailto:cgcisco@gmail.com"><i class="fa-regular fa-envelope"></i></a>
+        <a href="https://discord.gg/YOUR_INVITE" target="_blank"><i class="fa-brands fa-discord"></i></a>
     </div>
 
     <script>
         const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
         let lastSig = "";
+        let currentFullAddr = "";
 
         async function updateSignal() {
             try {
-                const response = await fetch(`${SB_URL}/rest/v1/signals?id=eq.1&select=sig,taste,score`, {
+                // 注意这里加入了 address 的查询
+                const response = await fetch(`${SB_URL}/rest/v1/signals?id=eq.1&select=sig,taste,score,address`, {
                     headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
                 });
                 const [data] = await response.json();
@@ -72,33 +76,40 @@
                     lastSig = data.sig;
                     render(data);
                 }
-            } catch (e) { console.log("Pulse checking..."); }
+            } catch (e) { console.log("Pulse check..."); }
         }
 
         function render(data) {
             const ball = document.getElementById('ball');
             const st = document.getElementById('status-text');
+            const ad = document.getElementById('addr-display');
             const score = data.score || 0;
+            currentFullAddr = data.address || "Unknown";
+
+            // 缩写地址显示 (例如: 675k...U1Mp8)
+            const shortAddr = currentFullAddr.slice(0,6) + "..." + currentFullAddr.slice(-5);
+            ad.innerText = shortAddr;
 
             let bg, glow;
-            if (score < 300) { // Ripe
-                bg = "linear-gradient(45deg, #f39c12, #f1c40f)";
-                glow = "rgba(241, 196, 15, 0.5)";
-            } else if (score < 700) { // Bruised
-                bg = "linear-gradient(45deg, #e67e22, #d35400)";
-                glow = "rgba(230, 126, 34, 0.5)";
-            } else { // Toxic
-                bg = "linear-gradient(45deg, #8e44ad, #2c3e50)";
-                glow = "rgba(142, 68, 173, 0.5)";
-            }
+            if (score < 300) { bg = "linear-gradient(45deg, #f39c12, #f1c40f)"; glow = "rgba(241, 196, 15, 0.5)"; }
+            else if (score < 700) { bg = "linear-gradient(45deg, #e67e22, #d35400)"; glow = "rgba(230, 126, 34, 0.5)"; }
+            else { bg = "linear-gradient(45deg, #8e44ad, #2c3e50)"; glow = "rgba(142, 68, 173, 0.5)"; }
 
             ball.style.background = bg;
             ball.style.boxShadow = `0 0 80px ${glow}`;
             st.style.opacity = 0;
             setTimeout(() => { st.innerText = data.taste; st.style.opacity = 1; }, 500);
-            ball.classList.add('active');
-            setTimeout(() => ball.classList.remove('active'), 1000);
         }
+
+        function copyAddr() {
+            if(currentFullAddr) {
+                navigator.clipboard.writeText(currentFullAddr);
+                const oldText = document.getElementById('addr-display').innerText;
+                document.getElementById('addr-display').innerText = "COPIED!";
+                setTimeout(() => document.getElementById('addr-display').innerText = oldText, 1000);
+            }
+        }
+
         setInterval(updateSignal, 2500);
     </script>
 </body>
