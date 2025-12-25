@@ -5,14 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyBanana AI | 剥离噪音，提取纯粹</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         :root {
-            --discord-dark: #23272A; /* Discord 主背景色 */
-            --discord-purple: #7289DA; /* Discord 紫色 */
-            --discord-light-grey: #99AAB5; /* Discord 文字灰 */
-            --banana-amber: #f39c12; /* 香蕉琥珀色 */
-            --banana-gold: #f1c40f; /* 香蕉金色 */
-            --banana-orange: #e67e22; /* 香蕉橘色 */
+            --discord-dark: #23272A;
+            --discord-purple: #7289DA;
+            --discord-light-grey: #99AAB5;
+            --banana-gold: #f1c40f;
+            --danger-purple: #8e44ad;
+            --warning-orange: #e67e22;
         }
 
         body {
@@ -24,53 +26,37 @@
             align-items: center;
             background-color: var(--discord-dark);
             color: var(--discord-light-grey);
-            font-family: 'Inter', "PingFang SC", "Microsoft YaHei", sans-serif;
-            overflow: hidden; /* 防止滚动条 */
-            position: relative; /* 用于背景效果 */
+            font-family: 'Inter', "PingFang SC", sans-serif;
+            overflow: hidden;
+            position: relative;
         }
 
-        /* ----------------------- Discord 风格背景颗粒感 ----------------------- */
+        /* 背景微光特效 */
         body::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at center, rgba(var(--discord-purple), 0.08) 0%, transparent 70%);
-            animation: pulseBg 20s infinite alternate;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, rgba(114, 137, 218, 0.05) 0%, transparent 70%);
             z-index: -1;
         }
 
-        @keyframes pulseBg {
-            0% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(1); opacity: 0.8; }
-        }
-
-        /* ----------------------- 琥珀核心流体 ----------------------- */
+        /* 琥珀核心流体球 */
         .banana-core {
-            width: 280px;
-            height: 280px;
-            background: linear-gradient(45deg, var(--banana-amber), var(--banana-gold), var(--banana-orange));
+            width: 260px;
+            height: 260px;
+            background: linear-gradient(45deg, #f39c12, var(--banana-gold));
             border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-            box-shadow: 0 0 70px rgba(var(--discord-purple), 0.4); /* Discord 紫色光晕 */
-            transition: all 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 更柔和的过渡 */
-            animation: morph 8s ease-in-out infinite, glowPurple 4s ease-in-out infinite alternate;
+            box-shadow: 0 0 60px rgba(241, 196, 15, 0.3);
+            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: morph 8s ease-in-out infinite;
             cursor: pointer;
-            border: 2px solid rgba(var(--discord-purple), 0.6); /* 紫色边框 */
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .banana-core:hover {
-            transform: scale(1.08);
-            box-shadow: 0 0 100px rgba(var(--discord-purple), 0.6);
-        }
-
+        /* 信号触发时的跳动效果 */
         .active {
-            transform: scale(1.3); /* 放大更多 */
-            filter: brightness(1.1); /* 亮度略降，更沉稳 */
-            box-shadow: 0 0 150px rgba(var(--discord-purple), 0.8); /* 更强的紫色冲击 */
-            border-color: var(--banana-gold); /* 激活时边框变回金色 */
+            transform: scale(1.15);
+            filter: brightness(1.1);
         }
 
         @keyframes morph {
@@ -78,71 +64,51 @@
             50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
         }
 
-        @keyframes glowPurple {
-            0% { box-shadow: 0 0 70px rgba(114, 137, 218, 0.4); }
-            100% { box-shadow: 0 0 90px rgba(114, 137, 218, 0.6); }
-        }
-
-        /* ----------------------- 状态信息区 ----------------------- */
+        /* 文字状态区 */
         #status-container {
-            margin-top: 60px;
+            margin-top: 50px;
             text-align: center;
-            max-width: 80%;
-            min-height: 40px; /* 保证文字区域高度，避免抖动 */
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            max-width: 85%;
+            min-height: 60px;
         }
 
         #status-text {
-            font-size: 1.25rem; /* 字体略大 */
+            font-size: 1.2rem;
+            line-height: 1.6;
             font-weight: 400;
-            letter-spacing: 1.5px;
-            color: #E0E0E0; /* 亮一点的文字 */
-            transition: opacity 0.4s ease-in-out;
+            letter-spacing: 0.5px;
+            color: #FFFFFF;
+            opacity: 0.9;
+            transition: opacity 0.5s ease-in-out;
         }
 
-        /* ----------------------- 底部链接区 ----------------------- */
+        /* 底部图标链接 */
         .footer-links {
             position: fixed;
             bottom: 40px;
             display: flex;
-            gap: 40px;
-            opacity: 0.7;
-            transition: opacity 0.3s ease;
-            font-size: 1rem;
-        }
-
-        .footer-links:hover {
-            opacity: 1;
+            gap: 30px;
         }
 
         .footer-links a {
             color: var(--discord-light-grey);
+            font-size: 1.6rem;
+            transition: all 0.3s ease;
             text-decoration: none;
-            padding: 8px 12px;
-            border-radius: 6px;
-            background-color: rgba(var(--discord-purple), 0.15); /* 微弱的紫色背景 */
-            transition: all 0.2s ease;
+            opacity: 0.6;
         }
 
         .footer-links a:hover {
-            background-color: rgba(var(--discord-purple), 0.3);
             color: var(--discord-purple);
-            text-shadow: 0 0 8px rgba(var(--discord-purple), 0.5);
+            opacity: 1;
+            transform: translateY(-5px);
+            filter: drop-shadow(0 0 8px var(--discord-purple));
         }
 
-        /* ----------------------- 响应式优化 ----------------------- */
-        @media (max-width: 768px) {
-            .banana-core { width: 220px; height: 220px; }
-            #status-text { font-size: 1.1rem; }
-            .footer-links { 
-                flex-direction: column; 
-                align-items: center; 
-                gap: 20px; 
-                bottom: 25px; 
-                font-size: 0.9rem;
-            }
+        /* 响应式适配 */
+        @media (max-width: 600px) {
+            .banana-core { width: 200px; height: 200px; }
+            #status-text { font-size: 1rem; }
         }
     </style>
 </head>
@@ -151,47 +117,81 @@
     <div class="banana-core" id="ball"></div>
 
     <div id="status-container">
-        <div id="status-text">正在深邃的链海中，捕获第一个成熟信号...</div>
+        <div id="status-text">正在扫描链上信号，寻找最成熟的果实...</div>
     </div>
 
     <div class="footer-links">
-        <a href="mailto:cgcisco@gmail.com">Contact: cgcisco@gmail.com</a>
-        <a href="https://discord.gg/你的邀请码" target="_blank">Join Discord Community</a>
+        <a href="mailto:cgcisco@gmail.com" title="联系邮箱">
+            <i class="fa-regular fa-envelope"></i>
+        </a>
+        <a href="https://discord.gg/你的邀请码" target="_blank" title="加入 Discord">
+            <i class="fa-brands fa-discord"></i>
+        </a>
     </div>
 
     <script>
+        // --- 请替换为你自己的 Supabase 凭证 ---
+        const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
+        
         let lastSig = "";
         const ball = document.getElementById('ball');
-        const statusText = document.getElementById('status-text');
+        const statusDisplay = document.getElementById('status-text');
 
-        async function checkUpdate() {
+        async function fetchLatestSignal() {
             try {
-                // 读取 Python 生成的 JSON 文件 (增加参数防止浏览器缓存)
-                const response = await fetch('banana_status.json?t=' + Date.now());
-                const data = await response.json();
+                // 从 Supabase 获取最新的一行数据
+                const response = await fetch(`${SB_URL}/rest/v1/signals?id=eq.1&select=sig,taste,score`, {
+                    headers: {
+                        "apikey": SB_KEY,
+                        "Authorization": `Bearer ${SB_KEY}`
+                    }
+                });
+                const [data] = await response.json();
 
-                if (data.sig && data.sig !== lastSig) { // 确保 sig 存在且有变化
+                if (data && data.sig !== lastSig) {
                     lastSig = data.sig;
-                    triggerEffect(data);
+                    updateUI(data);
                 }
-            } catch (e) {
-                // 如果文件未生成或读取失败，保持默认状态
-                // console.error("Error fetching banana_status.json:", e); 
+            } catch (error) {
+                console.error("数据同步中...", error);
             }
         }
 
-        function triggerEffect(data) {
-            statusText.style.opacity = 0; // 淡出旧文本
-            setTimeout(() => {
-                statusText.innerText = data.taste;
-                statusText.style.opacity = 1; // 淡入新文本
-            }, 400); // 与 CSS 过渡时间同步
+        function updateUI(data) {
+            const score = data.score || 0;
+            let bgStyle, glowColor;
 
+            // 根据 RugCheck 分数动态切换球体颜色
+            if (score < 300) { // 优质 (金色)
+                bgStyle = "linear-gradient(45deg, #f39c12, #f1c40f)";
+                glowColor = "rgba(241, 196, 15, 0.6)";
+            } else if (score < 700) { // 中等风险 (橙色)
+                bgStyle = "linear-gradient(45deg, #e67e22, #d35400)";
+                glowColor = "rgba(230, 126, 34, 0.6)";
+            } else { // 剧毒/极高风险 (紫色)
+                bgStyle = "linear-gradient(45deg, #8e44ad, #2c3e50)";
+                glowColor = "rgba(142, 68, 173, 0.6)";
+            }
+
+            // 应用视觉更新
+            ball.style.background = bgStyle;
+            ball.style.boxShadow = `0 0 80px ${glowColor}`;
+            
+            // 文字切换效果
+            statusDisplay.style.opacity = 0;
+            setTimeout(() => {
+                statusDisplay.innerText = data.taste;
+                statusDisplay.style.opacity = 1;
+            }, 500);
+
+            // 触发球体跳动动画
             ball.classList.add('active');
-            setTimeout(() => ball.classList.remove('active'), 800); // 激活效果持续 800ms
+            setTimeout(() => ball.classList.remove('active'), 1000);
         }
 
-        setInterval(checkUpdate, 2500); // 每 2.5 秒检查一次，减少本地文件读取压力
+        // 每 2.5 秒检查一次数据更新
+        setInterval(fetchLatestSignal, 2500);
     </script>
 </body>
 </html>
