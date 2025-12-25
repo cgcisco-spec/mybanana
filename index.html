@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,67 +8,165 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --bg-dark: #121212; --discord-purple: #7289DA; --text-grey: #B9BBBE; }
+        :root { --bg-dark: #0a0a0a; --gold: #f1c40f; --safe: #2ecc71; --warn: #e67e22; --danger: #8e44ad; }
         body {
             margin: 0; height: 100vh; display: flex; flex-direction: column;
             justify-content: center; align-items: center;
-            background-color: var(--bg-dark); color: var(--text-grey);
+            background-color: var(--bg-dark); color: #fff;
             font-family: 'Inter', sans-serif; overflow: hidden;
         }
+
+        /* --- Airdrop & Whitelist Section --- */
+        #airdrop-zone { position: fixed; top: 20px; left: 20px; z-index: 100; }
+        .airdrop-badge {
+            background: rgba(241, 196, 15, 0.1); border: 1px solid var(--gold);
+            padding: 10px 18px; border-radius: 30px; font-size: 0.75rem;
+            color: var(--gold); cursor: pointer; display: flex; align-items: center;
+            gap: 8px; transition: 0.3s; animation: pulse-border 2s infinite;
+        }
+        .airdrop-badge:hover { background: var(--gold); color: #000; }
+        #whitelist-input {
+            display: none; margin-top: 10px; background: rgba(20,20,20,0.98); 
+            border: 1px solid var(--gold); padding: 15px; border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+        }
+        #user-wallet {
+            background: transparent; border: none; border-bottom: 1px solid #444;
+            color: #fff; padding: 8px 5px; width: 220px; outline: none;
+            font-family: monospace; font-size: 0.8rem; margin-bottom: 12px; display: block;
+        }
+        #whitelist-input button {
+            background: var(--gold); border: none; color: #000; padding: 8px;
+            border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; transition: 0.2s;
+        }
+        #whitelist-input button:hover { opacity: 0.9; transform: scale(0.98); }
+
+        /* --- Morphing Banana Ball --- */
         .banana-core {
-            width: 240px; height: 240px;
+            width: 260px; height: 260px;
             background: linear-gradient(45deg, #f39c12, #f1c40f);
             border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-            box-shadow: 0 0 60px rgba(241, 196, 15, 0.3);
-            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 80px rgba(241, 196, 15, 0.2);
+            transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
             animation: morph 8s ease-in-out infinite;
         }
-        @keyframes morph {
-            0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
-            50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
-        }
-        #status-container { margin-top: 40px; text-align: center; max-width: 85%; }
-        #status-text { font-size: 1.15rem; color: #FFFFFF; font-weight: 300; line-height: 1.6; margin-bottom: 20px; }
-        
-        /* 地址框样式 */
-        #addr-display {
-            background: rgba(255,255,255,0.05);
-            padding: 8px 15px; border-radius: 20px;
-            font-family: 'Courier New', monospace; font-size: 0.85rem;
-            color: var(--discord-purple); cursor: pointer;
-            transition: 0.3s; border: 1px solid rgba(114, 137, 218, 0.2);
-            display: inline-block;
-        }
-        #addr-display:hover { background: rgba(114, 137, 218, 0.1); transform: scale(1.05); }
+        @keyframes morph { 0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; } 50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; } }
+        @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
 
-        .footer-links { position: fixed; bottom: 40px; display: flex; gap: 30px; }
-        .footer-links a { color: var(--text-grey); font-size: 1.5rem; transition: 0.3s; opacity: 0.5; }
-        .footer-links a:hover { color: var(--discord-purple); opacity: 1; }
+        /* --- Status & Tools --- */
+        #status-container { margin-top: 50px; text-align: center; max-width: 90%; }
+        #status-text { font-size: 1.25rem; font-weight: 300; line-height: 1.6; min-height: 4rem; margin-bottom: 10px; }
+        
+        .tool-bar { display: flex; flex-direction: column; align-items: center; gap: 18px; opacity: 0; transition: 0.8s; }
+        #addr-display {
+            background: rgba(255,255,255,0.03); padding: 10px 20px; border-radius: 12px;
+            font-family: 'Courier New', monospace; font-size: 0.9rem; color: #888;
+            cursor: pointer; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s;
+        }
+        #addr-display:hover { border-color: var(--gold); color: #fff; background: rgba(255,255,255,0.05); }
+
+        .action-links { display: flex; gap: 25px; align-items: center; }
+        .action-links a { color: #666; font-size: 1.3rem; transition: 0.3s; text-decoration: none; display: flex; align-items: center; }
+        .action-links a:hover { color: #fff; transform: translateY(-3px); }
+        .icon-img { width: 22px; height: 22px; filter: grayscale(1); transition: 0.3s; opacity: 0.6; }
+        .icon-img:hover { filter: grayscale(0); opacity: 1; }
+
+        .footer-links { position: fixed; bottom: 30px; display: flex; gap: 25px; opacity: 0.3; }
+        .footer-links a { color: #fff; font-size: 1.2rem; }
     </style>
 </head>
 <body>
 
+    <div id="airdrop-zone">
+        <div class="airdrop-badge" id="airdrop-btn" onclick="toggleWhitelist()">
+            <i class="fa-solid fa-parachute-box"></i> EARLY ACCESS & AIRDROP
+        </div>
+        <div id="whitelist-input">
+            <input type="text" id="user-wallet" placeholder="Solana Wallet Address">
+            <button onclick="submitWhitelist()">JOIN WHITELIST</button>
+        </div>
+    </div>
+
     <div class="banana-core" id="ball"></div>
 
     <div id="status-container">
-        <div id="status-text">Listening to the pulse of Solana...</div>
-        <div id="addr-display" onclick="copyAddr()">Waiting for Signal...</div>
+        <div id="status-text">Scanning for the golden vintage...</div>
+        
+        <div class="tool-bar" id="tool-bar">
+            <div id="addr-display" onclick="copyAddr()" title="Click to copy CA">---</div>
+            
+            <div class="action-links">
+                <a id="link-dex" href="#" target="_blank" title="View on Dexscreener">
+                    <img src="https://mint.jup.ag/img/dexscreener.png" class="icon-img">
+                </a>
+                <a id="link-bird" href="#" target="_blank" title="View on Birdeye">
+                    <img src="https://mint.jup.ag/img/birdeye.png" class="icon-img">
+                </a>
+                <a id="link-share" href="#" target="_blank" title="Share Alpha to X">
+                    <i class="fa-brands fa-x-twitter"></i>
+                </a>
+            </div>
+        </div>
     </div>
 
     <div class="footer-links">
         <a href="mailto:cgcisco@gmail.com"><i class="fa-regular fa-envelope"></i></a>
-        <a href="https://discord.gg/YOUR_INVITE" target="_blank"><i class="fa-brands fa-discord"></i></a>
+        <a href="https://discord.gg/yourlink" target="_blank"><i class="fa-brands fa-discord"></i></a>
     </div>
 
     <script>
+        // --- CONFIGURATION ---
         const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
+        
         let lastSig = "";
         let currentFullAddr = "";
 
+        // --- WHITELIST LOGIC ---
+        function toggleWhitelist() {
+            const input = document.getElementById('whitelist-input');
+            input.style.display = input.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function submitWhitelist() {
+            const addr = document.getElementById('user-wallet').value.trim();
+            const btn = document.getElementById('airdrop-btn');
+            
+            if (addr.length < 32 || addr.length > 44) {
+                alert("Please enter a valid Solana address");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${SB_URL}/rest/v1/whitelist`, {
+                    method: 'POST',
+                    headers: {
+                        "apikey": SB_KEY,
+                        "Authorization": `Bearer ${SB_KEY}`,
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal"
+                    },
+                    body: JSON.stringify({ address: addr })
+                });
+
+                if (response.ok) {
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> REGISTERED';
+                    btn.style.background = "var(--safe)";
+                    btn.style.borderColor = "var(--safe)";
+                    btn.style.color = "#fff";
+                    toggleWhitelist();
+                    alert("Welcome! You're on the list for $BANANA.");
+                } else {
+                    alert("Already registered or database error.");
+                }
+            } catch (e) {
+                alert("Connection failed.");
+            }
+        }
+
+        // --- CORE DATA LOGIC ---
         async function updateSignal() {
             try {
-                // 注意这里加入了 address 的查询
                 const response = await fetch(`${SB_URL}/rest/v1/signals?id=eq.1&select=sig,taste,score,address`, {
                     headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
                 });
@@ -76,41 +175,60 @@
                     lastSig = data.sig;
                     render(data);
                 }
-            } catch (e) { console.log("Pulse check..."); }
+            } catch (e) { console.log("Pulse..."); }
         }
 
         function render(data) {
             const ball = document.getElementById('ball');
             const st = document.getElementById('status-text');
+            const tb = document.getElementById('tool-bar');
             const ad = document.getElementById('addr-display');
+            
+            currentFullAddr = data.address || "";
             const score = data.score || 0;
-            currentFullAddr = data.address || "Unknown";
 
-            // 缩写地址显示 (例如: 675k...U1Mp8)
-            const shortAddr = currentFullAddr.slice(0,6) + "..." + currentFullAddr.slice(-5);
-            ad.innerText = shortAddr;
+            st.innerText = data.taste;
+            tb.style.opacity = 1;
 
+            if (currentFullAddr) {
+                ad.innerText = currentFullAddr.slice(0,6) + "..." + currentFullAddr.slice(-5);
+                
+                // Update Links
+                document.getElementById('link-dex').href = `https://dexscreener.com/solana/${currentFullAddr}`;
+                document.getElementById('link-bird').href = `https://birdeye.so/token/${currentFullAddr}?chain=solana`;
+                
+                // Update Twitter Share
+                const tweetText = `Found a ripe alpha on MyBanana.ai! 🍌\n\n"${data.taste}"\n\nCA: ${currentFullAddr}`;
+                document.getElementById('link-share').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+            }
+
+            // Ball Visual States
             let bg, glow;
-            if (score < 300) { bg = "linear-gradient(45deg, #f39c12, #f1c40f)"; glow = "rgba(241, 196, 15, 0.5)"; }
-            else if (score < 700) { bg = "linear-gradient(45deg, #e67e22, #d35400)"; glow = "rgba(230, 126, 34, 0.5)"; }
-            else { bg = "linear-gradient(45deg, #8e44ad, #2c3e50)"; glow = "rgba(142, 68, 173, 0.5)"; }
+            if (score < 300) { 
+                bg = "linear-gradient(45deg, #f39c12, #f1c40f)"; 
+                glow = "rgba(241, 196, 15, 0.4)"; 
+            } else if (score < 700) { 
+                bg = "linear-gradient(45deg, #e67e22, #d35400)"; 
+                glow = "rgba(230, 126, 34, 0.4)"; 
+            } else { 
+                bg = "linear-gradient(45deg, #8e44ad, #2c3e50)"; 
+                glow = "rgba(142, 68, 173, 0.4)"; 
+            }
 
             ball.style.background = bg;
             ball.style.boxShadow = `0 0 80px ${glow}`;
-            st.style.opacity = 0;
-            setTimeout(() => { st.innerText = data.taste; st.style.opacity = 1; }, 500);
         }
 
         function copyAddr() {
             if(currentFullAddr) {
                 navigator.clipboard.writeText(currentFullAddr);
-                const oldText = document.getElementById('addr-display').innerText;
+                const old = document.getElementById('addr-display').innerText;
                 document.getElementById('addr-display').innerText = "COPIED!";
-                setTimeout(() => document.getElementById('addr-display').innerText = oldText, 1000);
+                setTimeout(() => document.getElementById('addr-display').innerText = old, 1000);
             }
         }
 
-        setInterval(updateSignal, 2500);
+        setInterval(updateSignal, 3000);
     </script>
 </body>
 </html>
