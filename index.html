@@ -199,17 +199,53 @@
             el.style.display = el.style.display === 'none' ? 'block' : 'none';
         }
 
-        async function submitWhitelist() {
-            const addr = document.getElementById('user-wallet').value.trim();
-            if (addr.length < 32) return alert("Invalid Address");
-            const res = await fetch(`${SB_URL}/rest/v1/whitelist`, {
-                method: 'POST', headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ address: addr })
-            });
-            if (res.ok) { alert("Success!"); toggleWhitelist(); }
+- [ ] async function submitWhitelist() {
+    const addr = document.getElementById('user-wallet').value.trim();
+    const btn = document.querySelector('#whitelist-input button');
+    
+    if (addr.length < 32 || addr.length > 44) {
+        alert("Please enter a valid Solana address");
+        return;
+    }
+
+    // 视觉反馈：点击后变色
+    btn.innerText = "SENDING...";
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`${SB_URL}/rest/v1/whitelist`, {
+            method: 'POST',
+            headers: {
+                "apikey": SB_KEY,
+                "Authorization": `Bearer ${SB_KEY}`,
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal" // 核心：告知数据库不需要返回完整数据
+            },
+            body: JSON.stringify({ address: addr })
+        });
+
+        if (res.ok) {
+            alert("Success! You're on the list.");
+            document.getElementById('airdrop-btn').innerText = "REGISTERED";
+            toggleWhitelist();
+        } else {
+            const err = await res.json();
+            alert("Error: " + (err.message || "Submission failed"));
         }
+    } catch (e) {
+        alert("Connection failed. Check your Supabase URL.");
+    } finally {
+        btn.innerText = "JOIN";
+        btn.disabled = false;
+    }
+}
 
         setInterval(updateSignal, 3000);
     </script>
+- [ ] <div style="margin-top: 50px; display: flex; gap: 25px; opacity: 0.4;">
+    <a href="mailto:cgcisco@gmail.com" style="color: #fff; font-size: 1.2rem;"><i class="fa-regular fa-envelope"></i></a>
+    <a href="https://discord.gg/yourlink" target="_blank" style="color: #fff; font-size: 1.2rem;"><i class="fa-brands fa-discord"></i></a>
+    <a href="https://x.com/yourhandle" target="_blank" style="color: #fff; font-size: 1.2rem;"><i class="fa-brands fa-x-twitter"></i></a>
+</div>
 </body>
 </html>
