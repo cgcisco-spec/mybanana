@@ -9,14 +9,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --bg-dark: #0a0a0a; --gold: #f1c40f; --safe: #2ecc71; --warn: #e67e22; --danger: #8e44ad; }
+        
         body {
-            margin: 0; height: 100vh; display: flex; flex-direction: column;
+            margin: 0; min-height: 100vh; display: flex; flex-direction: column;
             justify-content: center; align-items: center;
             background-color: var(--bg-dark); color: #fff;
-            font-family: 'Inter', sans-serif; overflow: hidden;
+            font-family: 'Inter', sans-serif; padding: 40px 0;
         }
 
-        /* --- Airdrop & Whitelist Section --- */
+        /* --- Airdrop Badge --- */
         #airdrop-zone { position: fixed; top: 20px; left: 20px; z-index: 100; }
         .airdrop-badge {
             background: rgba(241, 196, 15, 0.1); border: 1px solid var(--gold);
@@ -24,207 +25,188 @@
             color: var(--gold); cursor: pointer; display: flex; align-items: center;
             gap: 8px; transition: 0.3s; animation: pulse-border 2s infinite;
         }
-        .airdrop-badge:hover { background: var(--gold); color: #000; }
         #whitelist-input {
             display: none; margin-top: 10px; background: rgba(20,20,20,0.98); 
             border: 1px solid var(--gold); padding: 15px; border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.8);
         }
-        #user-wallet {
-            background: transparent; border: none; border-bottom: 1px solid #444;
-            color: #fff; padding: 8px 5px; width: 220px; outline: none;
-            font-family: monospace; font-size: 0.8rem; margin-bottom: 12px; display: block;
-        }
-        #whitelist-input button {
-            background: var(--gold); border: none; color: #000; padding: 8px;
-            border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; transition: 0.2s;
-        }
-        #whitelist-input button:hover { opacity: 0.9; transform: scale(0.98); }
 
-        /* --- Morphing Banana Ball --- */
+        /* --- Main Visual: The Banana Ball --- */
         .banana-core {
-            width: 260px; height: 260px;
+            width: 220px; height: 220px;
             background: linear-gradient(45deg, #f39c12, #f1c40f);
             border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
             box-shadow: 0 0 80px rgba(241, 196, 15, 0.2);
             transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
             animation: morph 8s ease-in-out infinite;
+            margin-bottom: 30px;
         }
         @keyframes morph { 0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; } 50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; } }
         @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
 
-        /* --- Status & Tools --- */
-        #status-container { margin-top: 50px; text-align: center; max-width: 90%; }
-        #status-text { font-size: 1.25rem; font-weight: 300; line-height: 1.6; min-height: 4rem; margin-bottom: 10px; }
+        /* --- Status Section --- */
+        #status-container { text-align: center; width: 100%; max-width: 400px; padding: 0 20px; }
+        #status-text { font-size: 1.1rem; font-weight: 300; line-height: 1.5; min-height: 3.5rem; margin-bottom: 20px; color: #eee; }
         
-        .tool-bar { display: flex; flex-direction: column; align-items: center; gap: 18px; opacity: 0; transition: 0.8s; }
+        .tool-bar { display: flex; flex-direction: column; align-items: center; gap: 15px; opacity: 0; transition: 0.8s; margin-bottom: 40px;}
         #addr-display {
-            background: rgba(255,255,255,0.03); padding: 10px 20px; border-radius: 12px;
-            font-family: 'Courier New', monospace; font-size: 0.9rem; color: #888;
-            cursor: pointer; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s;
+            background: rgba(255,255,255,0.03); padding: 8px 16px; border-radius: 10px;
+            font-family: monospace; font-size: 0.85rem; color: #888;
+            cursor: pointer; border: 1px solid rgba(255,255,255,0.1);
         }
-        #addr-display:hover { border-color: var(--gold); color: #fff; background: rgba(255,255,255,0.05); }
+        #addr-display:hover { border-color: var(--gold); color: #fff; }
 
-        .action-links { display: flex; gap: 25px; align-items: center; }
-        .action-links a { color: #666; font-size: 1.3rem; transition: 0.3s; text-decoration: none; display: flex; align-items: center; }
-        .action-links a:hover { color: #fff; transform: translateY(-3px); }
-        .icon-img { width: 22px; height: 22px; filter: grayscale(1); transition: 0.3s; opacity: 0.6; }
-        .icon-img:hover { filter: grayscale(0); opacity: 1; }
+        .action-links { display: flex; gap: 20px; }
+        .action-links a { color: #555; font-size: 1.2rem; transition: 0.2s; }
+        .action-links a:hover { color: #fff; transform: translateY(-2px); }
 
-        .footer-links { position: fixed; bottom: 30px; display: flex; gap: 25px; opacity: 0.3; }
-        .footer-links a { color: #fff; font-size: 1.2rem; }
+        /* --- History Feed Section --- */
+        #history-feed { width: 100%; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; }
+        .feed-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 15px; margin-bottom: 10px; background: rgba(255,255,255,0.02);
+            border-radius: 12px; cursor: pointer; transition: 0.2s; border: 1px solid transparent;
+        }
+        .feed-item:hover { background: rgba(255,255,255,0.05); border-color: rgba(241,196,15,0.3); transform: translateX(5px); }
+        .score-tag { padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* --- Utilities --- */
+        .copy-toast {
+            position: fixed; background: var(--gold); color: #000; padding: 5px 12px;
+            border-radius: 6px; font-size: 0.75rem; font-weight: bold; z-index: 2000;
+            animation: fadeUp 0.8s forwards; pointer-events: none;
+        }
+        @keyframes fadeUp { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
     </style>
 </head>
 <body>
 
     <div id="airdrop-zone">
         <div class="airdrop-badge" id="airdrop-btn" onclick="toggleWhitelist()">
-            <i class="fa-solid fa-parachute-box"></i> EARLY ACCESS & AIRDROP
+            <i class="fa-solid fa-parachute-box"></i> EARLY ACCESS
         </div>
         <div id="whitelist-input">
-            <input type="text" id="user-wallet" placeholder="Solana Wallet Address">
-            <button onclick="submitWhitelist()">JOIN WHITELIST</button>
+            <input type="text" id="user-wallet" placeholder="Wallet Address" style="background:transparent; border:none; border-bottom:1px solid #444; color:#fff; padding:8px; width:180px; outline:none; font-size:0.8rem;">
+            <button onclick="submitWhitelist()" style="background:var(--gold); border:none; padding:8px; border-radius:5px; cursor:pointer; font-weight:600; margin-left:5px;">JOIN</button>
         </div>
     </div>
 
     <div class="banana-core" id="ball"></div>
 
     <div id="status-container">
-        <div id="status-text">Scanning for the golden vintage...</div>
+        <div id="status-text">Scanning Solana...</div>
         
         <div class="tool-bar" id="tool-bar">
-            <div id="addr-display" onclick="copyAddr()" title="Click to copy CA">---</div>
-            
+            <div id="addr-display" onclick="copyAddr(event, currentFullAddr)">Waiting for signal...</div>
             <div class="action-links">
-    <a id="link-dex" href="#" target="_blank" title="Dexscreener">
-        <i class="fa-solid fa-chart-line"></i> </a>
-    <a id="link-bird" href="#" target="_blank" title="Birdeye">
-        <i class="fa-solid fa-eye"></i> </a>
-    <a id="link-share" href="#" target="_blank" title="Share Alpha to X">
-        <i class="fa-brands fa-x-twitter"></i>
-    </a>
-</div>
-            
+                <a id="link-dex" href="#" target="_blank"><i class="fa-solid fa-chart-line"></i></a>
+                <a id="link-bird" href="#" target="_blank"><i class="fa-solid fa-eye"></i></a>
+                <a id="link-share" href="#" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
+            </div>
         </div>
-    </div>
 
-    <div class="footer-links">
-        <a href="mailto:cgcisco@gmail.com"><i class="fa-regular fa-envelope"></i></a>
-        <a href="https://discord.gg/yourlink" target="_blank"><i class="fa-brands fa-discord"></i></a>
+        <div id="history-feed">
+            </div>
     </div>
 
     <script>
-        // --- CONFIGURATION ---
         const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
-        
         let lastSig = "";
         let currentFullAddr = "";
 
-        // --- WHITELIST LOGIC ---
-        function toggleWhitelist() {
-            const input = document.getElementById('whitelist-input');
-            input.style.display = input.style.display === 'none' ? 'block' : 'none';
-        }
-
-        async function submitWhitelist() {
-            const addr = document.getElementById('user-wallet').value.trim();
-            const btn = document.getElementById('airdrop-btn');
-            
-            if (addr.length < 32 || addr.length > 44) {
-                alert("Please enter a valid Solana address");
-                return;
-            }
-
-            try {
-                const response = await fetch(`${SB_URL}/rest/v1/whitelist`, {
-                    method: 'POST',
-                    headers: {
-                        "apikey": SB_KEY,
-                        "Authorization": `Bearer ${SB_KEY}`,
-                        "Content-Type": "application/json",
-                        "Prefer": "return=minimal"
-                    },
-                    body: JSON.stringify({ address: addr })
-                });
-
-                if (response.ok) {
-                    btn.innerHTML = '<i class="fa-solid fa-check"></i> REGISTERED';
-                    btn.style.background = "var(--safe)";
-                    btn.style.borderColor = "var(--safe)";
-                    btn.style.color = "#fff";
-                    toggleWhitelist();
-                    alert("Welcome! You're on the list for $BANANA.");
-                } else {
-                    alert("Already registered or database error.");
-                }
-            } catch (e) {
-                alert("Connection failed.");
-            }
-        }
-
-        // --- CORE DATA LOGIC ---
+        // --- Core Update Loop ---
         async function updateSignal() {
             try {
-                const response = await fetch(`${SB_URL}/rest/v1/signals?id=eq.1&select=sig,taste,score,address`, {
+                const response = await fetch(`${SB_URL}/rest/v1/signals?select=*&order=created_at.desc&limit=6`, {
                     headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
                 });
-                const [data] = await response.json();
-                if (data && data.sig !== lastSig) {
-                    lastSig = data.sig;
-                    render(data);
+                const dataList = await response.json();
+                if (dataList && dataList.length > 0) {
+                    const latest = dataList[0];
+                    if (latest.sig !== lastSig) {
+                        lastSig = latest.sig;
+                        renderMain(latest);
+                        renderHistory(dataList.slice(1)); // 列表显示除了最新一个之外的
+                    }
                 }
-            } catch (e) { console.log("Pulse..."); }
+            } catch (e) { console.log("Syncing..."); }
         }
 
-        function render(data) {
+        // --- Render Main Area ---
+        function renderMain(data) {
             const ball = document.getElementById('ball');
             const st = document.getElementById('status-text');
             const tb = document.getElementById('tool-bar');
             const ad = document.getElementById('addr-display');
             
             currentFullAddr = data.address || "";
-            const score = data.score || 0;
-
             st.innerText = data.taste;
             tb.style.opacity = 1;
 
             if (currentFullAddr) {
                 ad.innerText = currentFullAddr.slice(0,6) + "..." + currentFullAddr.slice(-5);
-                
-                // Update Links
                 document.getElementById('link-dex').href = `https://dexscreener.com/solana/${currentFullAddr}`;
                 document.getElementById('link-bird').href = `https://birdeye.so/token/${currentFullAddr}?chain=solana`;
-                
-                // Update Twitter Share
                 const tweetText = `Found a ripe alpha on MyBanana.ai! 🍌\n\n"${data.taste}"\n\nCA: ${currentFullAddr}`;
                 document.getElementById('link-share').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
             }
 
-            // Ball Visual States
-            let bg, glow;
-            if (score < 300) { 
-                bg = "linear-gradient(45deg, #f39c12, #f1c40f)"; 
-                glow = "rgba(241, 196, 15, 0.4)"; 
-            } else if (score < 700) { 
-                bg = "linear-gradient(45deg, #e67e22, #d35400)"; 
-                glow = "rgba(230, 126, 34, 0.4)"; 
-            } else { 
-                bg = "linear-gradient(45deg, #8e44ad, #2c3e50)"; 
-                glow = "rgba(142, 68, 173, 0.4)"; 
-            }
-
+            let bg, glow, score = data.score;
+            if (score < 300) { bg = "linear-gradient(45deg, #f39c12, #f1c40f)"; glow = "rgba(241, 196, 15, 0.4)"; }
+            else if (score < 700) { bg = "linear-gradient(45deg, #e67e22, #d35400)"; glow = "rgba(230, 126, 34, 0.4)"; }
+            else { bg = "linear-gradient(45deg, #8e44ad, #2c3e50)"; glow = "rgba(142, 68, 173, 0.4)"; }
             ball.style.background = bg;
             ball.style.boxShadow = `0 0 80px ${glow}`;
         }
 
-        function copyAddr() {
-            if(currentFullAddr) {
-                navigator.clipboard.writeText(currentFullAddr);
-                const old = document.getElementById('addr-display').innerText;
-                document.getElementById('addr-display').innerText = "COPIED!";
-                setTimeout(() => document.getElementById('addr-display').innerText = old, 1000);
-            }
+        // --- Render History Feed ---
+        function renderHistory(list) {
+            const feed = document.getElementById('history-feed');
+            feed.innerHTML = '<div style="font-size:0.7rem; color:#444; margin-bottom:15px; text-align:left; letter-spacing:1px;">RECENT CAPTURES</div>';
+            list.forEach(item => {
+                const color = item.score < 300 ? '#f1c40f' : (item.score < 700 ? '#e67e22' : '#8e44ad');
+                const div = document.createElement('div');
+                div.className = 'feed-item';
+                div.onclick = (e) => copyAddr(e, item.address);
+                div.innerHTML = `
+                    <div style="text-align:left">
+                        <div style="color:#eee; font-family:monospace; font-size:0.8rem;">${item.address.slice(0,6)}...${item.address.slice(-4)}</div>
+                        <div style="color:#555; font-size:0.65rem; margin-top:2px;">${item.taste.slice(0,35)}...</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span class="score-tag" style="background:${color}15; color:${color}">${item.score}</span>
+                        <a href="https://dexscreener.com/solana/${item.address}" target="_blank" onclick="event.stopPropagation();" style="color:#333;"><i class="fa-solid fa-up-right-from-square" style="font-size:0.8rem;"></i></a>
+                    </div>`;
+                feed.appendChild(div);
+            });
+        }
+
+        // --- Utils ---
+        function copyAddr(e, addr) {
+            if(!addr) return;
+            navigator.clipboard.writeText(addr);
+            const toast = document.createElement('div');
+            toast.className = 'copy-toast';
+            toast.innerText = 'COPIED';
+            toast.style.left = e.pageX + 'px'; toast.style.top = e.pageY + 'px';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 800);
+        }
+
+        function toggleWhitelist() {
+            const el = document.getElementById('whitelist-input');
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function submitWhitelist() {
+            const addr = document.getElementById('user-wallet').value.trim();
+            if (addr.length < 32) return alert("Invalid Address");
+            const res = await fetch(`${SB_URL}/rest/v1/whitelist`, {
+                method: 'POST', headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" },
+                body: JSON.stringify({ address: addr })
+            });
+            if (res.ok) { alert("Success!"); toggleWhitelist(); }
         }
 
         setInterval(updateSignal, 3000);
