@@ -31,7 +31,7 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.8);
         }
 
-        /* --- Main Visual: The Banana Ball --- */
+        /* --- Main Visual --- */
         .banana-core {
             width: 220px; height: 220px;
             background: linear-gradient(45deg, #f39c12, #f1c40f);
@@ -77,6 +77,10 @@
             animation: fadeUp 0.8s forwards; pointer-events: none;
         }
         @keyframes fadeUp { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
+
+        .social-links { margin-top: 50px; display: flex; gap: 25px; opacity: 0.4; }
+        .social-links a { color: #fff; font-size: 1.2rem; transition: 0.3s; }
+        .social-links a:hover { opacity: 1; transform: scale(1.1); }
     </style>
 </head>
 <body>
@@ -105,8 +109,13 @@
             </div>
         </div>
 
-        <div id="history-feed">
-            </div>
+        <div id="history-feed"></div>
+    </div>
+
+    <div class="social-links">
+        <a href="mailto:cgcisco@gmail.com"><i class="fa-regular fa-envelope"></i></a>
+        <a href="https://discord.gg/yourlink" target="_blank"><i class="fa-brands fa-discord"></i></a>
+        <a href="https://x.com/yourhandle" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
     </div>
 
     <script>
@@ -115,7 +124,6 @@
         let lastSig = "";
         let currentFullAddr = "";
 
-        // --- Core Update Loop ---
         async function updateSignal() {
             try {
                 const response = await fetch(`${SB_URL}/rest/v1/signals?select=*&order=created_at.desc&limit=6`, {
@@ -127,13 +135,12 @@
                     if (latest.sig !== lastSig) {
                         lastSig = latest.sig;
                         renderMain(latest);
-                        renderHistory(dataList.slice(1)); // 列表显示除了最新一个之外的
+                        renderHistory(dataList.slice(1));
                     }
                 }
             } catch (e) { console.log("Syncing..."); }
         }
 
-        // --- Render Main Area ---
         function renderMain(data) {
             const ball = document.getElementById('ball');
             const st = document.getElementById('status-text');
@@ -160,7 +167,6 @@
             ball.style.boxShadow = `0 0 80px ${glow}`;
         }
 
-        // --- Render History Feed ---
         function renderHistory(list) {
             const feed = document.getElementById('history-feed');
             feed.innerHTML = '<div style="font-size:0.7rem; color:#444; margin-bottom:15px; text-align:left; letter-spacing:1px;">RECENT CAPTURES</div>';
@@ -171,8 +177,8 @@
                 div.onclick = (e) => copyAddr(e, item.address);
                 div.innerHTML = `
                     <div style="text-align:left">
-                        <div style="color:#eee; font-family:monospace; font-size:0.8rem;">${item.address.slice(0,6)}...${item.address.slice(-4)}</div>
-                        <div style="color:#555; font-size:0.65rem; margin-top:2px;">${item.taste.slice(0,35)}...</div>
+                        <div style="color:#eee; font-family:monospace; font-size:0.8rem;">${item.address ? item.address.slice(0,6) + '...' + item.address.slice(-4) : 'Unknown'}</div>
+                        <div style="color:#555; font-size:0.65rem; margin-top:2px;">${item.taste ? item.taste.slice(0,35) + '...' : ''}</div>
                     </div>
                     <div style="display:flex; align-items:center; gap:12px;">
                         <span class="score-tag" style="background:${color}15; color:${color}">${item.score}</span>
@@ -182,7 +188,6 @@
             });
         }
 
-        // --- Utils ---
         function copyAddr(e, addr) {
             if(!addr) return;
             navigator.clipboard.writeText(addr);
@@ -199,53 +204,50 @@
             el.style.display = el.style.display === 'none' ? 'block' : 'none';
         }
 
-- [ ] async function submitWhitelist() {
-    const addr = document.getElementById('user-wallet').value.trim();
-    const btn = document.querySelector('#whitelist-input button');
-    
-    if (addr.length < 32 || addr.length > 44) {
-        alert("Please enter a valid Solana address");
-        return;
-    }
+        async function submitWhitelist() {
+            const addrInput = document.getElementById('user-wallet');
+            const addr = addrInput.value.trim();
+            const btn = document.querySelector('#whitelist-input button');
+            
+            if (addr.length < 32 || addr.length > 44) {
+                alert("Please enter a valid Solana address");
+                return;
+            }
 
-    // 视觉反馈：点击后变色
-    btn.innerText = "SENDING...";
-    btn.disabled = true;
+            btn.innerText = "SENDING...";
+            btn.disabled = true;
 
-    try {
-        const res = await fetch(`${SB_URL}/rest/v1/whitelist`, {
-            method: 'POST',
-            headers: {
-                "apikey": SB_KEY,
-                "Authorization": `Bearer ${SB_KEY}`,
-                "Content-Type": "application/json",
-                "Prefer": "return=minimal" // 核心：告知数据库不需要返回完整数据
-            },
-            body: JSON.stringify({ address: addr })
-        });
+            try {
+                const res = await fetch(`${SB_URL}/rest/v1/whitelist`, {
+                    method: 'POST',
+                    headers: {
+                        "apikey": SB_KEY,
+                        "Authorization": `Bearer ${SB_KEY}`,
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal"
+                    },
+                    body: JSON.stringify({ address: addr })
+                });
 
-        if (res.ok) {
-            alert("Success! You're on the list.");
-            document.getElementById('airdrop-btn').innerText = "REGISTERED";
-            toggleWhitelist();
-        } else {
-            const err = await res.json();
-            alert("Error: " + (err.message || "Submission failed"));
+                if (res.ok) {
+                    alert("Success! You're on the list.");
+                    document.getElementById('airdrop-btn').innerText = "REGISTERED";
+                    addrInput.value = "";
+                    toggleWhitelist();
+                } else {
+                    const err = await res.json();
+                    alert("Error: " + (err.message || "Submission failed"));
+                }
+            } catch (e) {
+                alert("Connection failed. Check your network.");
+            } finally {
+                btn.innerText = "JOIN";
+                btn.disabled = false;
+            }
         }
-    } catch (e) {
-        alert("Connection failed. Check your Supabase URL.");
-    } finally {
-        btn.innerText = "JOIN";
-        btn.disabled = false;
-    }
-}
 
         setInterval(updateSignal, 3000);
+        updateSignal(); // 初始加载一次
     </script>
-- [ ] <div style="margin-top: 50px; display: flex; gap: 25px; opacity: 0.4;">
-    <a href="mailto:cgcisco@gmail.com" style="color: #fff; font-size: 1.2rem;"><i class="fa-regular fa-envelope"></i></a>
-    <a href="https://discord.gg/yourlink" target="_blank" style="color: #fff; font-size: 1.2rem;"><i class="fa-brands fa-discord"></i></a>
-    <a href="https://x.com/yourhandle" target="_blank" style="color: #fff; font-size: 1.2rem;"><i class="fa-brands fa-x-twitter"></i></a>
-</div>
 </body>
 </html>
