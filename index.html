@@ -83,30 +83,76 @@
         .social-links a:hover { opacity: 1; transform: scale(1.1); }
     </style>
 </head>
-<body>
+<style>
+    /* --- 新增/增强的样式 --- */
+    .config-panel {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 20px; border-radius: 20px;
+        margin-top: 20px; width: 100%; box-sizing: border-box;
+        text-align: left;
+    }
+    .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .slider-title { font-size: 0.75rem; color: #888; letter-spacing: 1px; }
+    .slider-value { color: var(--gold); font-weight: bold; font-family: monospace; }
+    
+    input[type=range] {
+        width: 100%; -webkit-appearance: none; background: rgba(255,255,255,0.1);
+        height: 4px; border-radius: 2px; outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none; width: 18px; height: 18px;
+        background: var(--gold); border-radius: 50%; cursor: pointer;
+        box-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+    }
 
+    .verified-badge {
+        display: inline-flex; align-items: center; gap: 5px;
+        font-size: 0.65rem; background: rgba(46, 204, 113, 0.1);
+        color: var(--safe); padding: 2px 8px; border-radius: 4px;
+        margin-top: 5px; border: 1px solid rgba(46, 204, 113, 0.2);
+    }
+
+    /* 优化历史列表动画 */
+    @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .feed-item { animation: slideIn 0.4s ease-out; }
+</style>
+
+<body>
     <div id="airdrop-zone">
         <div class="airdrop-badge" id="airdrop-btn" onclick="toggleWhitelist()">
             <i class="fa-solid fa-parachute-box"></i> EARLY ACCESS
         </div>
         <div id="whitelist-input">
-            <input type="text" id="user-wallet" placeholder="Wallet Address" style="background:transparent; border:none; border-bottom:1px solid #444; color:#fff; padding:8px; width:180px; outline:none; font-size:0.8rem;">
-            <button onclick="submitWhitelist()" style="background:var(--gold); border:none; padding:8px; border-radius:5px; cursor:pointer; font-weight:600; margin-left:5px;">JOIN</button>
+            <input type="text" id="user-wallet" placeholder="Enter Solana Wallet" style="background:transparent; border:none; border-bottom:1px solid #444; color:#fff; padding:8px; width:180px; outline:none; font-size:0.8rem;">
+            <button id="join-btn" onclick="submitWhitelist()" style="background:var(--gold); border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:600; margin-left:5px;">JOIN</button>
+            <div id="verify-status"></div>
         </div>
     </div>
 
     <div class="banana-core" id="ball"></div>
 
     <div id="status-container">
-        <div id="status-text">Scanning Solana...</div>
+        <div id="status-text">Scanning for Alpha...</div>
         
-        <div class="tool-bar" id="tool-bar">
-            <div id="addr-display" onclick="copyAddr(event, currentFullAddr)">Waiting for signal...</div>
+        <div class="tool-bar" id="tool-bar" style="opacity: 0;">
+            <div id="addr-display" onclick="copyAddr(event, currentFullAddr)">Waiting...</div>
             <div class="action-links">
-                <a id="link-dex" href="#" target="_blank"><i class="fa-solid fa-chart-line"></i></a>
-                <a id="link-bird" href="#" target="_blank"><i class="fa-solid fa-eye"></i></a>
-                <a id="link-share" href="#" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
+                <a id="link-dex" href="#" target="_blank" title="DexScreener"><i class="fa-solid fa-chart-line"></i></a>
+                <a id="link-bird" href="#" target="_blank" title="Birdeye"><i class="fa-solid fa-eye"></i></a>
+                <a id="link-share" href="#" target="_blank" title="Share on X"><i class="fa-brands fa-x-twitter"></i></a>
             </div>
+        </div>
+
+        <div class="config-panel">
+            <div class="slider-header">
+                <span class="slider-title">MIN SECURITY SCORE</span>
+                <span class="slider-value" id="score-val">300</span>
+            </div>
+            <input type="range" id="score-range" min="0" max="1000" value="300" oninput="updateRangeLabel(this.value)" onchange="saveStrategy(this.value)">
+            <p style="font-size: 0.6rem; color: #555; margin-top: 10px; line-height: 1.4;">
+                <i class="fa-solid fa-circle-info"></i> Adjusting this affects your private Discord signals in real-time.
+            </p>
         </div>
 
         <div id="history-feed"></div>
@@ -119,10 +165,17 @@
     </div>
 
     <script>
-        const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
-        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
+        const SB_URL = "你的_SUPABASE_URL";
+        const SB_KEY = "你的_SUPABASE_KEY";
         let lastSig = "";
         let currentFullAddr = "";
+        let currentUserWallet = localStorage.getItem('mybanana_wallet') || "";
+
+        // 初始化：如果本地有钱包，尝试获取其配置
+        if (currentUserWallet) {
+            document.getElementById('user-wallet').value = currentUserWallet;
+            loadUserStrategy(currentUserWallet);
+        }
 
         async function updateSignal() {
             try {
@@ -169,7 +222,7 @@
 
         function renderHistory(list) {
             const feed = document.getElementById('history-feed');
-            feed.innerHTML = '<div style="font-size:0.7rem; color:#444; margin-bottom:15px; text-align:left; letter-spacing:1px;">RECENT CAPTURES</div>';
+            feed.innerHTML = '<div style="font-size:0.7rem; color:#444; margin-bottom:15px; text-align:left; letter-spacing:1px;">LIVE SIGNAL FEED</div>';
             list.forEach(item => {
                 const color = item.score < 300 ? '#f1c40f' : (item.score < 700 ? '#e67e22' : '#8e44ad');
                 const div = document.createElement('div');
@@ -178,14 +231,69 @@
                 div.innerHTML = `
                     <div style="text-align:left">
                         <div style="color:#eee; font-family:monospace; font-size:0.8rem;">${item.address ? item.address.slice(0,6) + '...' + item.address.slice(-4) : 'Unknown'}</div>
-                        <div style="color:#555; font-size:0.65rem; margin-top:2px;">${item.taste ? item.taste.slice(0,35) + '...' : ''}</div>
+                        <div style="color:#666; font-size:0.65rem; margin-top:2px;">${item.taste ? item.taste.slice(0,40) : ''}</div>
                     </div>
                     <div style="display:flex; align-items:center; gap:12px;">
                         <span class="score-tag" style="background:${color}15; color:${color}">${item.score}</span>
-                        <a href="https://dexscreener.com/solana/${item.address}" target="_blank" onclick="event.stopPropagation();" style="color:#333;"><i class="fa-solid fa-up-right-from-square" style="font-size:0.8rem;"></i></a>
                     </div>`;
                 feed.appendChild(div);
             });
+        }
+
+        // --- 用户策略逻辑 ---
+
+        function updateRangeLabel(val) {
+            document.getElementById('score-val').innerText = val;
+        }
+
+        async function loadUserStrategy(wallet) {
+            const res = await fetch(`${SB_URL}/rest/v1/whitelist?address=eq.${wallet}`, {
+                headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
+            });
+            const data = await res.json();
+            if (data && data.length > 0) {
+                const user = data[0];
+                document.getElementById('score-range').value = user.min_score || 300;
+                document.getElementById('score-val').innerText = user.min_score || 300;
+                if (user.discord_id) {
+                    document.getElementById('verify-status').innerHTML = `<div class="verified-badge"><i class="fa-solid fa-circle-check"></i> Discord Linked</div>`;
+                }
+            }
+        }
+
+        async function saveStrategy(val) {
+            if (!currentUserWallet) {
+                alert("Please join Early Access with your wallet first!");
+                return;
+            }
+            await fetch(`${SB_URL}/rest/v1/whitelist?address=eq.${currentUserWallet}`, {
+                method: 'PATCH',
+                headers: {
+                    "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ min_score: parseInt(val) })
+            });
+            console.log("Strategy Updated:", val);
+        }
+
+        async function submitWhitelist() {
+            const addr = document.getElementById('user-wallet').value.trim();
+            if (addr.length < 32) return;
+
+            const res = await fetch(`${SB_URL}/rest/v1/whitelist`, {
+                method: 'POST',
+                headers: {
+                    "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json", "Prefer": "return=representation"
+                },
+                body: JSON.stringify({ address: addr, min_score: 300 })
+            });
+            
+            if (res.ok) {
+                currentUserWallet = addr;
+                localStorage.setItem('mybanana_wallet', addr);
+                toggleWhitelist();
+                alert("Welcome to the Alpha Circle. Your settings are now live!");
+            }
         }
 
         function copyAddr(e, addr) {
@@ -204,64 +312,8 @@
             el.style.display = el.style.display === 'none' ? 'block' : 'none';
         }
 
-        async function submitWhitelist() {
-            const addrInput = document.getElementById('user-wallet');
-            const addr = addrInput.value.trim();
-            const btn = document.querySelector('#whitelist-input button');
-            
-            if (addr.length < 32 || addr.length > 44) {
-                alert("Please enter a valid Solana address");
-                return;
-            }
-
-            btn.innerText = "SENDING...";
-            btn.disabled = true;
-
-            try {
-                const res = await fetch(`${SB_URL}/rest/v1/whitelist`, {
-                    method: 'POST',
-                    headers: {
-                        "apikey": SB_KEY,
-                        "Authorization": `Bearer ${SB_KEY}`,
-                        "Content-Type": "application/json",
-                        "Prefer": "return=minimal"
-                    },
-                    body: JSON.stringify({ address: addr })
-                });
-
-        if (res.ok) {
-            // 找到白名单输入框的容器
-            const container = document.getElementById('whitelist-input');
-            
-            // 变成引导加入 Discord 的样式
-            container.innerHTML = `
-                <div style="text-align:center; padding:10px; animation: slideIn 0.5s ease;">
-                    <i class="fa-solid fa-circle-check" style="color:var(--safe); font-size:2rem; margin-bottom:10px;"></i>
-                    <p style="color:var(--gold); font-weight:600; margin:5px 0;">ACCESS GRANTED</p>
-                    <p style="font-size:0.7rem; color:#888; margin-bottom:15px;">Your address is whitelisted. Join the inner circle:</p>
-                    <a href="https://discord.gg/QXgYxWmJF3" target="_blank" 
-                       style="display:inline-block; background:var(--gold); color:#000; padding:8px 20px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:0.8rem;">
-                       JOIN PRIVATE DISCORD
-                    </a>
-                </div>
-            `;
-            // 修改徽章文案
-            document.getElementById('airdrop-btn').innerHTML = `<i class="fa-solid fa-lock-open"></i> MEMBER ACTIVE`;
-        }
-else {
-                    const err = await res.json();
-                    alert("Error: " + (err.message || "Submission failed"));
-                }
-            } catch (e) {
-                alert("Connection failed. Check your network.");
-            } finally {
-                btn.innerText = "JOIN";
-                btn.disabled = false;
-            }
-        }
-
         setInterval(updateSignal, 3000);
-        updateSignal(); // 初始加载一次
+        updateSignal();
     </script>
 </body>
 </html>
