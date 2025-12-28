@@ -9,253 +9,124 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --bg-dark: #0a0a0a; --gold: #f1c40f; --safe: #2ecc71; --warn: #e67e22; --danger: #8e44ad; }
+        body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: var(--bg-dark); color: #fff; font-family: 'Inter', sans-serif; padding: 40px 0; }
         
-        body {
-            margin: 0; min-height: 100vh; display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            background-color: var(--bg-dark); color: #fff;
-            font-family: 'Inter', sans-serif; padding: 40px 0;
-        }
-
-        /* --- Airdrop Badge & Whitelist --- */
         #airdrop-zone { position: fixed; top: 20px; left: 20px; z-index: 100; }
-        .airdrop-badge {
-            background: rgba(241, 196, 15, 0.1); border: 1px solid var(--gold);
-            padding: 10px 18px; border-radius: 30px; font-size: 0.75rem;
-            color: var(--gold); cursor: pointer; display: flex; align-items: center;
-            gap: 8px; transition: 0.3s; animation: pulse-border 2s infinite;
-        }
-        #whitelist-input {
-            display: none; margin-top: 10px; background: rgba(20,20,20,0.98); 
-            border: 1px solid var(--gold); padding: 15px; border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8); width: 250px;
-        }
-
-        /* --- Main Banana Ball --- */
-        .banana-core {
-            width: 200px; height: 200px;
-            background: linear-gradient(45deg, #f39c12, #f1c40f);
-            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-            box-shadow: 0 0 80px rgba(241, 196, 15, 0.2);
-            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
-            animation: morph 8s ease-in-out infinite;
-            margin-bottom: 30px;
-        }
+        .airdrop-badge { background: rgba(241, 196, 15, 0.1); border: 1px solid var(--gold); padding: 10px 18px; border-radius: 30px; font-size: 0.75rem; color: var(--gold); cursor: pointer; animation: pulse 2s infinite; }
+        #whitelist-input { display: none; margin-top: 10px; background: #141414; border: 1px solid var(--gold); padding: 15px; border-radius: 15px; width: 250px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        
+        .banana-core { width: 180px; height: 180px; background: linear-gradient(45deg, #f39c12, #f1c40f); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; box-shadow: 0 0 60px rgba(241,196,15,0.2); animation: morph 8s infinite; margin-bottom: 30px; }
         @keyframes morph { 0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; } 50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(241,196,15,0.4); } 70% { box-shadow: 0 0 0 10px rgba(241,196,15,0); } 100% { box-shadow: 0 0 0 0 rgba(241,196,15,0); } }
 
-        /* --- Control Panel --- */
-        #status-container { text-align: center; width: 100%; max-width: 420px; padding: 0 20px; box-sizing: border-box; }
-        #status-text { font-size: 1.1rem; font-weight: 300; line-height: 1.5; min-height: 3.5rem; margin-bottom: 20px; color: #eee; }
-        
-        .config-panel {
-            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 20px; border-radius: 20px; margin-bottom: 30px; text-align: left;
-        }
+        #status-container { text-align: center; width: 100%; max-width: 400px; padding: 0 20px; }
+        .config-panel { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 20px; border-radius: 20px; margin-bottom: 25px; text-align: left; }
         .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .slider-title { font-size: 0.7rem; color: #666; letter-spacing: 1px; font-weight: 600; }
-        .slider-value { color: var(--gold); font-weight: bold; font-family: monospace; font-size: 1.1rem; }
+        .slider-value { color: var(--gold); font-weight: bold; font-family: monospace; font-size: 1.2rem; }
         
-        input[type=range] { width: 100%; -webkit-appearance: none; background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; outline: none; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: var(--gold); border-radius: 50%; cursor: pointer; box-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+        input[type=range] { width: 100%; -webkit-appearance: none; background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: var(--gold); border-radius: 50%; cursor: pointer; }
 
-        /* --- Signal Feed --- */
-        #history-feed { width: 100%; margin-top: 10px; }
-        .feed-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 14px; margin-bottom: 10px; background: rgba(255,255,255,0.02);
-            border-radius: 12px; cursor: pointer; transition: 0.3s; border: 1px solid transparent;
-            animation: slideIn 0.5s ease-out forwards;
-        }
-        .feed-item:hover { background: rgba(255,255,255,0.05); border-color: rgba(241,196,15,0.3); transform: scale(1.02); }
-        .score-tag { padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.05); }
+        .feed-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; background: rgba(255,255,255,0.02); border-radius: 10px; transition: 0.3s; }
+        .feed-item:hover { background: rgba(255,255,255,0.05); transform: translateX(5px); }
+        .score-tag { padding: 3px 8px; border-radius: 5px; font-weight: bold; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1); }
 
-        .verified-badge {
-            display: inline-flex; align-items: center; gap: 5px; font-size: 0.65rem;
-            background: rgba(46, 204, 113, 0.1); color: var(--safe);
-            padding: 4px 10px; border-radius: 6px; margin-top: 10px; border: 1px solid rgba(46, 204, 113, 0.2);
-        }
-
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(241, 196, 15, 0); } 100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); } }
-
-        .social-links { margin-top: 40px; display: flex; gap: 25px; opacity: 0.4; }
-        .social-links a { color: #fff; font-size: 1.2rem; transition: 0.3s; }
-        .social-links a:hover { opacity: 1; transform: scale(1.1); }
-        
-        .copy-toast { position: fixed; background: var(--gold); color: #000; padding: 5px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; z-index: 2000; animation: fadeUp 0.8s forwards; pointer-events: none; }
-        @keyframes fadeUp { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-20px); } }
+        #fb-btn { position: fixed; bottom: 20px; right: 20px; background: var(--gold); color: #000; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; }
+        #fb-modal { display: none; position: fixed; bottom: 75px; right: 20px; background: #1a1a1a; border: 1px solid var(--gold); padding: 15px; border-radius: 12px; width: 260px; z-index: 1000; }
     </style>
 </head>
 <body>
 
     <div id="airdrop-zone">
-        <div class="airdrop-badge" id="airdrop-btn" onclick="toggleWhitelist()">
-            <i class="fa-solid fa-parachute-box"></i> EARLY ACCESS
-        </div>
+        <div class="airdrop-badge" id="airdrop-btn" onclick="toggleWhitelist()"><i class="fa-solid fa-parachute-box"></i> EARLY ACCESS</div>
         <div id="whitelist-input">
-            <input type="text" id="user-wallet" placeholder="Solana Wallet Address" style="background:transparent; border:none; border-bottom:1px solid #444; color:#fff; padding:8px; width:100%; box-sizing:border-box; outline:none; font-size:0.8rem; margin-bottom:10px;">
-            <button id="join-btn" onclick="submitWhitelist()" style="background:var(--gold); border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; width:100%; color:#000;">SYNC STRATEGY</button>
-            <div id="verify-status"></div>
+            <input type="text" id="user-wallet" placeholder="Solana Address" style="background:transparent; border:none; border-bottom:1px solid #333; color:#fff; padding:8px; width:100%; box-sizing:border-box; outline:none; font-size:0.8rem; margin-bottom:12px;">
+            <button onclick="submitWhitelist()" style="background:var(--gold); border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; width:100%;">SYNC SETTINGS</button>
         </div>
     </div>
 
     <div class="banana-core" id="ball"></div>
 
     <div id="status-container">
-        <div id="status-text">Peeling the Solana noise...</div>
+        <div id="status-text" style="margin-bottom:20px; min-height:3rem;">Peeling Solana Alphas...</div>
         
         <div class="config-panel">
             <div class="slider-header">
-                <span class="slider-title">BOT ALERT THRESHOLD</span>
+                <span style="font-size:0.7rem; color:#666; letter-spacing:1px;">ALERT THRESHOLD</span>
                 <span class="slider-value" id="score-val">300</span>
             </div>
-            <input type="range" id="score-range" min="0" max="1000" value="300" 
-                   oninput="document.getElementById('score-val').innerText=this.value" 
-                   onchange="saveStrategy(this.value)">
-            <p style="font-size: 0.65rem; color: #555; margin-top: 12px; line-height: 1.4;">
-                <i class="fa-solid fa-robot"></i> DMs will be sent to your Discord when a token scores below this value.
-            </p>
+            <input type="range" id="score-range" min="0" max="1000" value="300" oninput="document.getElementById('score-val').innerText=this.value" onchange="saveStrategy(this.value)">
+            <p style="font-size: 0.6rem; color: #444; margin-top: 10px;">Pro Mode: $5K+ Liquidity & 80%+ LP Locked required.</p>
         </div>
 
         <div id="history-feed"></div>
     </div>
 
-    <div class="social-links">
-        <a href="mailto:cgcisco@gmail.com"><i class="fa-regular fa-envelope"></i></a>
-        <a href="https://discord.gg/QXgYxWmJF3" target="_blank"><i class="fa-brands fa-discord"></i></a>
-        <a href="https://x.com/yourhandle" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
+    <div id="fb-btn" onclick="document.getElementById('fb-modal').style.display='block'"><i class="fa-solid fa-lightbulb"></i></div>
+    <div id="fb-modal">
+        <textarea id="fb-text" placeholder="Idea or Bug?" style="width:100%; height:60px; background:#000; color:#fff; border:1px solid #333; border-radius:5px; padding:5px; font-size:0.7rem; outline:none;"></textarea>
+        <button onclick="submitFeedback()" style="width:100%; margin-top:8px; background:var(--gold); border:none; padding:5px; border-radius:5px; font-weight:bold; cursor:pointer;">SEND IDEA</button>
+        <button onclick="document.getElementById('fb-modal').style.display='none'" style="width:100%; margin-top:5px; background:transparent; color:#666; border:none; font-size:0.6rem; cursor:pointer;">CLOSE</button>
     </div>
 
     <script>
-        // --- 请在此处填入你的 Supabase 信息 ---
         const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
-        
         let lastSig = "";
         let currentUserWallet = localStorage.getItem('mybanana_wallet') || "";
 
-        // 初始化
-        if (currentUserWallet) {
-            document.getElementById('user-wallet').value = currentUserWallet;
-            loadUserStrategy(currentUserWallet);
-        }
+        if (currentUserWallet) { document.getElementById('user-wallet').value = currentUserWallet; loadUser(currentUserWallet); }
 
         async function updateSignal() {
-            try {
-                const response = await fetch(`${SB_URL}/rest/v1/signals?select=*&order=created_at.desc&limit=6`, {
-                    headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
-                });
-                const dataList = await response.json();
-                if (dataList && dataList.length > 0) {
-                    const latest = dataList[0];
-                    if (latest.sig !== lastSig) {
-                        lastSig = latest.sig;
-                        renderMain(latest);
-                        renderHistory(dataList.slice(1));
-                    }
-                }
-            } catch (e) { console.log("Re-syncing feed..."); }
+            const res = await fetch(`${SB_URL}/rest/v1/signals?select=*&order=created_at.desc&limit=5`, { headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` } });
+            const data = await res.json();
+            if (data && data.length > 0 && data[0].sig !== lastSig) {
+                lastSig = data[0].sig;
+                document.getElementById('status-text').innerText = data[0].taste;
+                renderFeed(data);
+            }
         }
 
-        function renderMain(data) {
-            const ball = document.getElementById('ball');
-            const st = document.getElementById('status-text');
-            st.innerText = data.taste || "Analyzing...";
-
-            let bg, glow, score = data.score;
-            if (score < 300) { bg = "linear-gradient(45deg, #f39c12, #f1c40f)"; glow = "rgba(241, 196, 15, 0.4)"; }
-            else if (score < 700) { bg = "linear-gradient(45deg, #e67e22, #d35400)"; glow = "rgba(230, 126, 34, 0.4)"; }
-            else { bg = "linear-gradient(45deg, #8e44ad, #2c3e50)"; glow = "rgba(142, 68, 173, 0.4)"; }
-            ball.style.background = bg;
-            ball.style.boxShadow = `0 0 80px ${glow}`;
-        }
-
-        function renderHistory(list) {
+        function renderFeed(list) {
             const feed = document.getElementById('history-feed');
-            feed.innerHTML = '<div style="font-size:0.65rem; color:#444; margin-bottom:12px; text-align:left; letter-spacing:1.5px; font-weight:bold;">LIVE RADAR FEED</div>';
-            list.forEach(item => {
-                const color = item.score < 300 ? '#f1c40f' : (item.score < 700 ? '#e67e22' : '#8e44ad');
-                const div = document.createElement('div');
-                div.className = 'feed-item';
-                div.onclick = (e) => copyAddr(e, item.address);
-                div.innerHTML = `
-                    <div style="text-align:left">
-                        <div style="color:#fff; font-family:monospace; font-size:0.85rem;">${item.address ? item.address.slice(0,6) + '...' + item.address.slice(-4) : 'Unknown'}</div>
-                        <div style="color:#555; font-size:0.65rem; margin-top:4px;">${item.taste ? item.taste.slice(0,42) : ''}</div>
-                    </div>
-                    <span class="score-tag" style="background:${color}15; color:${color}; border-color:${color}30">${item.score}</span>
-                `;
-                feed.appendChild(div);
+            feed.innerHTML = '<div style="font-size:0.6rem; color:#333; text-align:left; margin-bottom:10px;">PRO RADAR FEED</div>';
+            list.forEach(i => {
+                const color = i.score < 100 ? '#f1c40f' : '#e67e22';
+                feed.innerHTML += `<div class="feed-item">
+                    <div style="text-align:left"><div style="color:#eee; font-family:monospace; font-size:0.8rem;">${i.address.slice(0,6)}...${i.address.slice(-4)}</div></div>
+                    <span class="score-tag" style="color:${color}; border-color:${color}">${i.score}</span>
+                </div>`;
             });
-        }
-
-        async function loadUserStrategy(wallet) {
-            try {
-                const res = await fetch(`${SB_URL}/rest/v1/whitelist?address=eq.${wallet}`, {
-                    headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` }
-                });
-                const data = await res.json();
-                if (data && data.length > 0) {
-                    const user = data[0];
-                    document.getElementById('score-range').value = user.min_score || 300;
-                    document.getElementById('score-val').innerText = user.min_score || 300;
-                    if (user.discord_id) {
-                        document.getElementById('verify-status').innerHTML = `<div class="verified-badge"><i class="fa-solid fa-circle-check"></i> Discord Linked</div>`;
-                        document.getElementById('airdrop-btn').innerHTML = `<i class="fa-solid fa-lock-open"></i> MEMBER ACTIVE`;
-                    }
-                }
-            } catch(e) {}
         }
 
         async function saveStrategy(val) {
-            if (!currentUserWallet) {
-                alert("Please click 'Early Access' and join first!");
-                return;
-            }
-            await fetch(`${SB_URL}/rest/v1/whitelist?address=eq.${currentUserWallet}`, {
-                method: 'PATCH',
-                headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" },
-                body: JSON.stringify({ min_score: parseInt(val) })
-            });
+            if (!currentUserWallet) return alert("Sync wallet first!");
+            await fetch(`${SB_URL}/rest/v1/whitelist?address=eq.${currentUserWallet}`, { method: 'PATCH', headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ min_score: parseInt(val) }) });
         }
 
         async function submitWhitelist() {
             const addr = document.getElementById('user-wallet').value.trim();
-            if (addr.length < 32) return alert("Invalid Solana Address");
-
-            const res = await fetch(`${SB_URL}/rest/v1/whitelist`, {
-                method: 'POST',
-                headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json", "Prefer": "return=minimal" },
-                body: JSON.stringify({ address: addr, min_score: 300 })
-            });
-            
-            if (res.ok || res.status === 409) { // 409 means already exists
-                currentUserWallet = addr;
-                localStorage.setItem('mybanana_wallet', addr);
-                loadUserStrategy(addr);
-                alert("Strategy Synced. Join Discord to activate DMs!");
-                toggleWhitelist();
+            const res = await fetch(`${SB_URL}/rest/v1/whitelist`, { method: 'POST', headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ address: addr, min_score: 300 }) });
+            if (res.ok || res.status === 409) {
+                currentUserWallet = addr; localStorage.setItem('mybanana_wallet', addr);
+                toggleWhitelist(); alert("Linked! Start adjusting your threshold.");
             }
         }
 
-        function copyAddr(e, addr) {
-            if(!addr) return;
-            navigator.clipboard.writeText(addr);
-            const toast = document.createElement('div');
-            toast.className = 'copy-toast';
-            toast.innerText = 'COPIED';
-            toast.style.left = e.pageX + 'px'; toast.style.top = e.pageY + 'px';
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 800);
+        async function submitFeedback() {
+            const text = document.getElementById('fb-text').value;
+            await fetch(`${SB_URL}/rest/v1/feedbacks`, { method: 'POST', headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ user_id: currentUserWallet, content: text, source: 'web' }) });
+            alert("Sent!"); document.getElementById('fb-modal').style.display='none';
         }
 
-        function toggleWhitelist() {
-            const el = document.getElementById('whitelist-input');
-            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        async function loadUser(w) {
+            const res = await fetch(`${SB_URL}/rest/v1/whitelist?address=eq.${w}`, { headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` } });
+            const data = await res.json();
+            if (data.length > 0) { document.getElementById('score-range').value = data[0].min_score; document.getElementById('score-val').innerText = data[0].min_score; }
         }
 
-        setInterval(updateSignal, 3000);
-        updateSignal();
+        function toggleWhitelist() { const el = document.getElementById('whitelist-input'); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
+        setInterval(updateSignal, 3000); updateSignal();
     </script>
 </body>
 </html>
