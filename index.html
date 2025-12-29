@@ -1,85 +1,166 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyBanana AI | Peel the Noise</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        :root { --bg-dark: #0a0a0a; --gold: #f1c40f; --safe: #2ecc71; --warn: #e67e22; --danger: #8e44ad; }
-        body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: var(--bg-dark); color: #fff; font-family: 'Inter', sans-serif; padding: 40px 0; }
+        :root { --bg-dark: #0a0a0a; --gold: #f1c40f; --safe: #2ecc71; --warn: #e67e22; }
+        body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; background-color: var(--bg-dark); color: #fff; font-family: 'Inter', sans-serif; padding: 60px 0; }
         
-        #airdrop-zone { position: fixed; top: 20px; left: 20px; z-index: 100; }
-        .airdrop-badge { background: rgba(241, 196, 15, 0.1); border: 1px solid var(--gold); padding: 10px 18px; border-radius: 30px; font-size: 0.75rem; color: var(--gold); cursor: pointer; animation: pulse 2s infinite; }
-        #whitelist-input { display: none; margin-top: 10px; background: #141414; border: 1px solid var(--gold); padding: 15px; border-radius: 15px; width: 250px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        /* 顶部导航与状态 */
+        #top-bar { position: fixed; top: 0; width: 100%; max-width: 1200px; display: flex; justify-content: space-between; padding: 20px; box-sizing: border-box; z-index: 100; }
+        .badge { background: rgba(241, 196, 15, 0.1); border: 1px solid var(--gold); padding: 8px 15px; border-radius: 30px; font-size: 0.7rem; color: var(--gold); cursor: pointer; transition: 0.3s; }
+        .badge:hover { background: var(--gold); color: #000; }
         
-        .banana-core { width: 180px; height: 180px; background: linear-gradient(45deg, #f39c12, #f1c40f); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; box-shadow: 0 0 60px rgba(241,196,15,0.2); animation: morph 8s infinite; margin-bottom: 30px; }
+        /* 核心动画 */
+        .banana-core { width: 150px; height: 150px; background: linear-gradient(45deg, #f39c12, #f1c40f); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; box-shadow: 0 0 50px rgba(241,196,15,0.15); animation: morph 8s infinite; margin: 40px 0; }
         @keyframes morph { 0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; } 50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; } }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(241,196,15,0.4); } 70% { box-shadow: 0 0 0 10px rgba(241,196,15,0); } 100% { box-shadow: 0 0 0 0 rgba(241,196,15,0); } }
 
-        #status-container { text-align: center; width: 100%; max-width: 400px; padding: 0 20px; }
+        /* 配置面板 */
+        .container { width: 100%; max-width: 400px; padding: 0 20px; text-align: center; }
         .config-panel { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 20px; border-radius: 20px; margin-bottom: 25px; text-align: left; }
-        .slider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .slider-value { color: var(--gold); font-weight: bold; font-family: monospace; font-size: 1.2rem; }
-        
-        input[type=range] { width: 100%; -webkit-appearance: none; background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; }
+        .slider-header { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 0.7rem; color: #666; letter-spacing: 1px; }
+        input[type=range] { width: 100%; -webkit-appearance: none; background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; outline: none; }
         input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: var(--gold); border-radius: 50%; cursor: pointer; }
 
-        .feed-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; margin-bottom: 8px; background: rgba(255,255,255,0.02); border-radius: 10px; transition: 0.3s; }
-        .feed-item:hover { background: rgba(255,255,255,0.05); transform: translateX(5px); }
-        .score-tag { padding: 3px 8px; border-radius: 5px; font-weight: bold; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1); }
+        /* 历史列表 */
+        .feed-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; margin-bottom: 10px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid transparent; transition: 0.3s; cursor: pointer; }
+        .feed-item:hover { border-color: rgba(241, 196, 15, 0.3); transform: translateY(-2px); }
+        .score-tag { padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.7rem; background: rgba(241, 196, 15, 0.1); color: var(--gold); }
 
-        #fb-btn { position: fixed; bottom: 20px; right: 20px; background: var(--gold); color: #000; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; }
-        #fb-modal { display: none; position: fixed; bottom: 75px; right: 20px; background: #1a1a1a; border: 1px solid var(--gold); padding: 15px; border-radius: 12px; width: 260px; z-index: 1000; }
+        /* 底部社交 */
+        .social-links { margin-top: 40px; display: flex; gap: 20px; }
+        .social-links a { color: #444; font-size: 1.2rem; transition: 0.3s; }
+        .social-links a:hover { color: var(--gold); }
+
+        /* SSO & Feedback */
+        #fb-btn { position: fixed; bottom: 25px; right: 25px; background: var(--gold); color: #000; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        #fb-modal { display: none; position: fixed; bottom: 85px; right: 25px; background: #151515; border: 1px solid var(--gold); padding: 20px; border-radius: 15px; width: 280px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
 
-    <div id="airdrop-zone">
-        <div class="airdrop-badge" id="airdrop-btn" onclick="toggleWhitelist()"><i class="fa-solid fa-parachute-box"></i> EARLY ACCESS</div>
-        <div id="whitelist-input">
-            <input type="text" id="user-wallet" placeholder="Solana Address" style="background:transparent; border:none; border-bottom:1px solid #333; color:#fff; padding:8px; width:100%; box-sizing:border-box; outline:none; font-size:0.8rem; margin-bottom:12px;">
-            <button onclick="submitWhitelist()" style="background:var(--gold); border:none; padding:10px; border-radius:8px; cursor:pointer; font-weight:bold; width:100%;">SYNC SETTINGS</button>
+    <div id="top-bar">
+        <div id="airdrop-section">
+            <div class="badge" id="airdrop-btn" onclick="toggleEarlyAccess()"><i class="fa-solid fa-parachute-box"></i> EARLY ACCESS</div>
+            <div id="early-input-box" style="display:none; margin-top:10px; background:#1a1a1a; padding:15px; border-radius:12px; border:1px solid #333;">
+                <input type="text" id="user-wallet" placeholder="Solana Address" style="width:100%; background:none; border:none; border-bottom:1px solid #444; color:#fff; padding:8px; outline:none; font-size:0.8rem;">
+                <button onclick="saveWallet()" style="width:100%; margin-top:10px; background:var(--gold); border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer;">SYNC STRATEGY</button>
+            </div>
+        </div>
+        
+        <div id="auth-section">
+            <div id="login-btn" class="badge" style="background:#fff; color:#000;" onclick="login()"><i class="fa-brands fa-google"></i> SIGN IN</div>
+            <div id="user-profile" style="display:none; text-align:right;">
+                <div style="font-size:0.6rem; color:#666;" id="user-email"></div>
+                <div style="font-size:0.6rem; color:var(--gold); cursor:pointer;" onclick="logout()">Logout</div>
+            </div>
         </div>
     </div>
 
-    <div class="banana-core" id="ball"></div>
+    <div class="banana-core"></div>
 
-    <div id="status-container">
-        <div id="status-text" style="margin-bottom:20px; min-height:3rem;">Peeling Solana Alphas...</div>
-        
+    <div class="container">
+        <h2 style="font-weight: 300; letter-spacing: 2px; margin-bottom: 5px;">MyBanana AI</h2>
+        <p id="status-text" style="font-size: 0.75rem; color: #666; margin-bottom: 30px;">Peeling signals from the chain...</p>
+
         <div class="config-panel">
             <div class="slider-header">
-                <span style="font-size:0.7rem; color:#666; letter-spacing:1px;">ALERT THRESHOLD</span>
-                <span class="slider-value" id="score-val">300</span>
+                <span>SAFETY THRESHOLD</span>
+                <span id="score-val" style="color:var(--gold); font-weight:bold;">300</span>
             </div>
-            <input type="range" id="score-range" min="0" max="1000" value="300" oninput="document.getElementById('score-val').innerText=this.value" onchange="saveStrategy(this.value)">
-            <p style="font-size: 0.6rem; color: #444; margin-top: 10px;">Pro Mode: $5K+ Liquidity & 80%+ LP Locked required.</p>
+            <input type="range" id="score-range" min="0" max="1000" value="300" oninput="document.getElementById('score-val').innerText=this.value" onchange="updateBackendStrategy(this.value)">
+            <div style="font-size: 0.6rem; color: #444; margin-top:12px; line-height:1.4;">
+                <i class="fa-solid fa-shield-halved"></i> Only tokens with <b>$5,000+ Liquidity</b> are analyzed.
+            </div>
         </div>
 
         <div id="history-feed"></div>
+
+        <div class="social-links">
+            <a href="https://x.com/mybanbana" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
+            <a href="https://discord.gg/QXgYxWmJF3" target="_blank"><i class="fa-brands fa-discord"></i></a>
+            <a href="https://github.com/yourrepo" target="_blank"><i class="fa-brands fa-github"></i></a>
+        </div>
     </div>
 
     <div id="fb-btn" onclick="document.getElementById('fb-modal').style.display='block'"><i class="fa-solid fa-lightbulb"></i></div>
     <div id="fb-modal">
-        <textarea id="fb-text" placeholder="Idea or Bug?" style="width:100%; height:60px; background:#000; color:#fff; border:1px solid #333; border-radius:5px; padding:5px; font-size:0.7rem; outline:none;"></textarea>
-        <button onclick="submitFeedback()" style="width:100%; margin-top:8px; background:var(--gold); border:none; padding:5px; border-radius:5px; font-weight:bold; cursor:pointer;">SEND IDEA</button>
-        <button onclick="document.getElementById('fb-modal').style.display='none'" style="width:100%; margin-top:5px; background:transparent; color:#666; border:none; font-size:0.6rem; cursor:pointer;">CLOSE</button>
+        <p style="font-size:0.8rem; font-weight:bold; color:var(--gold); margin-top:0;">SUGGESTION</p>
+        <textarea id="fb-text" placeholder="Want new filters? Found a bug?" style="width:100%; height:80px; background:#000; color:#fff; border:1px solid #333; border-radius:8px; padding:10px; font-size:0.75rem; box-sizing:border-box; outline:none;"></textarea>
+        <button onclick="submitFeedback()" style="width:100%; margin-top:12px; background:var(--gold); border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">SUBMIT IDEA</button>
+        <button onclick="document.getElementById('fb-modal').style.display='none'" style="width:100%; margin-top:8px; background:none; border:none; color:#555; font-size:0.7rem; cursor:pointer;">Cancel</button>
     </div>
 
     <script>
-        const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
-        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
+                const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
+                const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
+        const sb = supabase.createClient(SB_URL, SB_KEY);
+
+        let currentUser = null;
         let lastSig = "";
-        let currentUserWallet = localStorage.getItem('mybanana_wallet') || "";
 
-        if (currentUserWallet) { document.getElementById('user-wallet').value = currentUserWallet; loadUser(currentUserWallet); }
+        // --- 初始化与 Auth ---
+        async function init() {
+            const { data: { user } } = await sb.auth.getUser();
+            if (user) {
+                currentUser = user;
+                document.getElementById('login-btn').style.display = 'none';
+                document.getElementById('user-profile').style.display = 'block';
+                document.getElementById('user-email').innerText = user.email;
+            }
+            
+            // 检查本地钱包状态 (问题1修复)
+            const savedWallet = localStorage.getItem('banana_wallet');
+            if (savedWallet) {
+                document.getElementById('airdrop-btn').innerHTML = `<i class="fa-solid fa-parachute-box"></i> EARLY ACCESS [ACTIVE]`;
+                document.getElementById('user-wallet').value = savedWallet;
+            }
+            
+            loadSignals();
+            setInterval(loadSignals, 5000);
+        }
 
-        async function updateSignal() {
-            const res = await fetch(`${SB_URL}/rest/v1/signals?select=*&order=created_at.desc&limit=5`, { headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` } });
-            const data = await res.json();
+        async function login() {
+            await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+        }
+
+        async function logout() {
+            await sb.auth.signOut();
+            location.reload();
+        }
+
+        // --- 功能逻辑 ---
+        function toggleEarlyAccess() {
+            const box = document.getElementById('early-input-box');
+            box.style.display = box.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function saveWallet() {
+            const addr = document.getElementById('user-wallet').value.trim();
+            if(!addr) return;
+            localStorage.setItem('banana_wallet', addr);
+            document.getElementById('airdrop-btn').innerHTML = `<i class="fa-solid fa-parachute-box"></i> EARLY ACCESS [ACTIVE]`;
+            
+            // 存入 whitelist
+            await sb.from('whitelist').upsert({ address: addr, min_score: 300 });
+            alert("Wallet synced with your strategy!");
+            toggleEarlyAccess();
+        }
+
+        async function updateBackendStrategy(val) {
+            const addr = localStorage.getItem('banana_wallet');
+            if(!addr) { alert("Please set your wallet in Early Access first!"); return; }
+            await sb.from('whitelist').update({ min_score: parseInt(val) }).eq('address', addr);
+        }
+
+        async function loadSignals() {
+            const { data } = await sb.from('signals').select('*').order('created_at', { ascending: false }).limit(5);
             if (data && data.length > 0 && data[0].sig !== lastSig) {
                 lastSig = data[0].sig;
                 document.getElementById('status-text').innerText = data[0].taste;
@@ -89,44 +170,41 @@
 
         function renderFeed(list) {
             const feed = document.getElementById('history-feed');
-            feed.innerHTML = '<div style="font-size:0.6rem; color:#333; text-align:left; margin-bottom:10px;">PRO RADAR FEED</div>';
+            feed.innerHTML = '<div style="font-size:0.6rem; color:#333; text-align:left; margin-bottom:10px; letter-spacing:1px;">LIVE RADAR FEED</div>';
             list.forEach(i => {
-                const color = i.score < 100 ? '#f1c40f' : '#e67e22';
-                feed.innerHTML += `<div class="feed-item">
-                    <div style="text-align:left"><div style="color:#eee; font-family:monospace; font-size:0.8rem;">${i.address.slice(0,6)}...${i.address.slice(-4)}</div></div>
-                    <span class="score-tag" style="color:${color}; border-color:${color}">${i.score}</span>
-                </div>`;
+                feed.innerHTML += `
+                    <div class="feed-item" onclick="window.open('https://dexscreener.com/solana/${i.address}')">
+                        <div style="text-align:left">
+                            <div style="font-family:monospace; font-size:0.85rem;">${i.address.slice(0,6)}...${i.address.slice(-4)}</div>
+                            <div style="font-size:0.6rem; color:#555; margin-top:4px;">${i.taste.slice(0,40)}...</div>
+                        </div>
+                        <span class="score-tag">${i.score}</span>
+                    </div>`;
             });
         }
 
-        async function saveStrategy(val) {
-            if (!currentUserWallet) return alert("Sync wallet first!");
-            await fetch(`${SB_URL}/rest/v1/whitelist?address=eq.${currentUserWallet}`, { method: 'PATCH', headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ min_score: parseInt(val) }) });
-        }
+        async function submitFeedback() {
+            if (!currentUser) {
+                alert("Please Sign In with Google to prevent spam.");
+                return;
+            }
+            const content = document.getElementById('fb-text').value;
+            if(!content) return;
 
-        async function submitWhitelist() {
-            const addr = document.getElementById('user-wallet').value.trim();
-            const res = await fetch(`${SB_URL}/rest/v1/whitelist`, { method: 'POST', headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ address: addr, min_score: 300 }) });
-            if (res.ok || res.status === 409) {
-                currentUserWallet = addr; localStorage.setItem('mybanana_wallet', addr);
-                toggleWhitelist(); alert("Linked! Start adjusting your threshold.");
+            const { error } = await sb.from('feedbacks').insert([{ 
+                user_id: currentUser.id, 
+                content: content, 
+                source: 'web_sso' 
+            }]);
+
+            if(!error) {
+                alert("Thanks! Your idea is peeling.");
+                document.getElementById('fb-modal').style.display = 'none';
+                document.getElementById('fb-text').value = '';
             }
         }
 
-        async function submitFeedback() {
-            const text = document.getElementById('fb-text').value;
-            await fetch(`${SB_URL}/rest/v1/feedbacks`, { method: 'POST', headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}`, "Content-Type": "application/json" }, body: JSON.stringify({ user_id: currentUserWallet, content: text, source: 'web' }) });
-            alert("Sent!"); document.getElementById('fb-modal').style.display='none';
-        }
-
-        async function loadUser(w) {
-            const res = await fetch(`${SB_URL}/rest/v1/whitelist?address=eq.${w}`, { headers: { "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` } });
-            const data = await res.json();
-            if (data.length > 0) { document.getElementById('score-range').value = data[0].min_score; document.getElementById('score-val').innerText = data[0].min_score; }
-        }
-
-        function toggleWhitelist() { const el = document.getElementById('whitelist-input'); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
-        setInterval(updateSignal, 3000); updateSignal();
+        init();
     </script>
 </body>
 </html>
