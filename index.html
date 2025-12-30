@@ -3,208 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBanana AI | Peel the Noise</title>
+    <title>MyBanana AI | Alpha Radar</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
-        :root { --bg-dark: #0a0a0a; --gold: #f1c40f; --safe: #2ecc71; --warn: #e67e22; }
-        body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; background-color: var(--bg-dark); color: #fff; font-family: 'Inter', sans-serif; padding: 60px 0; }
+        :root { --bg: #050505; --gold: #f1c40f; --text: #eee; --log-bg: #0f0f0f; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 30px 20px; }
         
-        /* 顶部导航与状态 */
-        #top-bar { position: fixed; top: 0; width: 100%; max-width: 1200px; display: flex; justify-content: space-between; padding: 20px; box-sizing: border-box; z-index: 100; }
-        .badge { background: rgba(241, 196, 15, 0.1); border: 1px solid var(--gold); padding: 8px 15px; border-radius: 30px; font-size: 0.7rem; color: var(--gold); cursor: pointer; transition: 0.3s; }
-        .badge:hover { background: var(--gold); color: #000; }
-        
-        /* 核心动画 */
-        .banana-core { width: 150px; height: 150px; background: linear-gradient(45deg, #f39c12, #f1c40f); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; box-shadow: 0 0 50px rgba(241,196,15,0.15); animation: morph 8s infinite; margin: 40px 0; }
-        @keyframes morph { 0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; } 50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; } }
+        .header { width: 100%; max-width: 900px; display: flex; justify-content: space-between; margin-bottom: 40px; }
+        .badge { padding: 8px 15px; border-radius: 20px; border: 1px solid #222; font-size: 12px; cursor: pointer; transition: 0.3s; background: rgba(255,255,255,0.02); }
+        .pro-tag { border-color: var(--gold); color: var(--gold); }
 
-        /* 配置面板 */
-        .container { width: 100%; max-width: 400px; padding: 0 20px; text-align: center; }
-        .config-panel { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 20px; border-radius: 20px; margin-bottom: 25px; text-align: left; }
-        .slider-header { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 0.7rem; color: #666; letter-spacing: 1px; }
-        input[type=range] { width: 100%; -webkit-appearance: none; background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px; outline: none; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; background: var(--gold); border-radius: 50%; cursor: pointer; }
+        .banana-core { width: 100px; height: 100px; background: var(--gold); border-radius: 50%; animation: pulse 3s infinite; box-shadow: 0 0 30px rgba(241,196,15,0.2); margin: 20px 0; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
 
-        /* 历史列表 */
-        .feed-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; margin-bottom: 10px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid transparent; transition: 0.3s; cursor: pointer; }
-        .feed-item:hover { border-color: rgba(241, 196, 15, 0.3); transform: translateY(-2px); }
-        .score-tag { padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 0.7rem; background: rgba(241, 196, 15, 0.1); color: var(--gold); }
+        /* 日志窗口 */
+        .log-window { width: 100%; max-width: 500px; background: var(--log-bg); border: 1px solid #222; border-radius: 12px; margin-top: 30px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .log-header { background: #1a1a1a; padding: 10px 15px; font-size: 11px; color: #666; display: flex; justify-content: space-between; border-bottom: 1px solid #222; }
+        #log-content { height: 180px; padding: 15px; font-family: 'Courier New', monospace; font-size: 13px; color: #00ff00; overflow-y: auto; text-align: left; }
+        .log-item { margin-bottom: 6px; opacity: 0.9; border-left: 2px solid #333; padding-left: 8px; }
+        .hit { color: var(--gold); font-weight: bold; border-left-color: var(--gold); }
 
-        /* 底部社交 */
-        .social-links { margin-top: 40px; display: flex; gap: 20px; }
-        .social-links a { color: #444; font-size: 1.2rem; transition: 0.3s; }
-        .social-links a:hover { color: var(--gold); }
-
-        /* SSO & Feedback */
-        #fb-btn { position: fixed; bottom: 25px; right: 25px; background: var(--gold); color: #000; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        #fb-modal { display: none; position: fixed; bottom: 85px; right: 25px; background: #151515; border: 1px solid var(--gold); padding: 20px; border-radius: 15px; width: 280px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .footer { margin-top: auto; display: flex; gap: 30px; padding: 40px; opacity: 0.4; }
+        .footer i { font-size: 1.5rem; transition: 0.3s; cursor: pointer; }
+        .footer i:hover { color: var(--gold); opacity: 1; }
     </style>
 </head>
 <body>
-
-    <div id="top-bar">
-        <div id="airdrop-section">
-            <div class="badge" id="airdrop-btn" onclick="toggleEarlyAccess()"><i class="fa-solid fa-parachute-box"></i> EARLY ACCESS</div>
-            <div id="early-input-box" style="display:none; margin-top:10px; background:#1a1a1a; padding:15px; border-radius:12px; border:1px solid #333;">
-                <input type="text" id="user-wallet" placeholder="Solana Address" style="width:100%; background:none; border:none; border-bottom:1px solid #444; color:#fff; padding:8px; outline:none; font-size:0.8rem;">
-                <button onclick="saveWallet()" style="width:100%; margin-top:10px; background:var(--gold); border:none; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer;">SYNC STRATEGY</button>
-            </div>
-        </div>
-        
-        <div id="auth-section">
-            <div id="login-btn" class="badge" style="background:#fff; color:#000;" onclick="login()"><i class="fa-brands fa-google"></i> SIGN IN</div>
-            <div id="user-profile" style="display:none; text-align:right;">
-                <div style="font-size:0.6rem; color:#666;" id="user-email"></div>
-                <div style="font-size:0.6rem; color:var(--gold); cursor:pointer;" onclick="logout()">Logout</div>
-            </div>
+    <div class="header">
+        <div id="airdrop-btn" class="badge">EARLY ACCESS</div>
+        <div style="display: flex; gap: 10px;">
+            <div id="tier-badge" class="badge">FREE TRIAL</div>
+            <div id="login-btn" class="badge" onclick="login()">SIGN IN</div>
         </div>
     </div>
 
     <div class="banana-core"></div>
-
-    <div class="container">
-        <h2 style="font-weight: 300; letter-spacing: 2px; margin-bottom: 5px;">MyBanana AI</h2>
-        <p id="status-text" style="font-size: 0.75rem; color: #666; margin-bottom: 30px;">Peeling signals from the chain...</p>
-
-        <div class="config-panel">
-            <div class="slider-header">
-                <span>SAFETY THRESHOLD</span>
-                <span id="score-val" style="color:var(--gold); font-weight:bold;">300</span>
-            </div>
-            <input type="range" id="score-range" min="0" max="1000" value="300" oninput="document.getElementById('score-val').innerText=this.value" onchange="updateBackendStrategy(this.value)">
-            <div style="font-size: 0.6rem; color: #444; margin-top:12px; line-height:1.4;">
-                <i class="fa-solid fa-shield-halved"></i> Only tokens with <b>$5,000+ Liquidity</b> are analyzed.
-            </div>
-        </div>
-
-        <div id="history-feed"></div>
-
-        <div class="social-links">
-            <a href="https://x.com/mybanbana" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
-            <a href="https://discord.gg/QXgYxWmJF3" target="_blank"><i class="fa-brands fa-discord"></i></a>
-            <a href="https://github.com/yourrepo" target="_blank"><i class="fa-brands fa-github"></i></a>
+    <h1 style="letter-spacing: 5px; font-weight: 200;">MYBANANA.AI</h1>
+    
+    <div class="log-window">
+        <div class="log-header"><span>TERMINAL v1.0</span><span id="live-dot" style="color:var(--gold)">● LIVE</span></div>
+        <div id="log-content">
+            <div class="log-item">> Initializing engine...</div>
+            <div class="log-item">> Connecting to Solana Mainnet...</div>
         </div>
     </div>
 
-    <div id="fb-btn" onclick="document.getElementById('fb-modal').style.display='block'"><i class="fa-solid fa-lightbulb"></i></div>
-    <div id="fb-modal">
-        <p style="font-size:0.8rem; font-weight:bold; color:var(--gold); margin-top:0;">SUGGESTION</p>
-        <textarea id="fb-text" placeholder="Want new filters? Found a bug?" style="width:100%; height:80px; background:#000; color:#fff; border:1px solid #333; border-radius:8px; padding:10px; font-size:0.75rem; box-sizing:border-box; outline:none;"></textarea>
-        <button onclick="submitFeedback()" style="width:100%; margin-top:12px; background:var(--gold); border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">SUBMIT IDEA</button>
-        <button onclick="document.getElementById('fb-modal').style.display='none'" style="width:100%; margin-top:8px; background:none; border:none; color:#555; font-size:0.7rem; cursor:pointer;">Cancel</button>
+    <div class="footer">
+        <i class="fa-brands fa-x-twitter"></i>
+        <i class="fa-brands fa-discord"></i>
+        <i class="fa-brands fa-github"></i>
     </div>
 
     <script>
-                const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
-                const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
-        const sb = supabase.createClient(SB_URL, SB_KEY);
+        const sb = supabase.createClient("https://ctizvqaqnsavuawprgzu.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA");
+        let lastAction = Date.now();
 
-        let currentUser = null;
-        let lastSig = "";
+        // 1. 日志控制
+        function addLog(text, isHit = false) {
+            const container = document.getElementById('log-content');
+            const div = document.createElement('div');
+            div.className = isHit ? 'log-item hit' : 'log-item';
+            div.innerText = `[${new Date().toLocaleTimeString()}] > ${text}`;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            if(container.childElementCount > 25) container.removeChild(container.firstChild);
+        }
 
-        // --- 初始化与 Auth ---
-        async function init() {
+        // 2. 交互与登录
+        ['mousemove','click','keydown'].forEach(e => document.addEventListener(e, () => lastAction = Date.now()));
+        async function login() { await sb.auth.signInWithOAuth({ provider: 'google' }); }
+
+        // 3. 心跳同步
+        async function heartbeat() {
             const { data: { user } } = await sb.auth.getUser();
-            if (user) {
-                currentUser = user;
-                document.getElementById('login-btn').style.display = 'none';
-                document.getElementById('user-profile').style.display = 'block';
-                document.getElementById('user-email').innerText = user.email;
+            if (!user || document.visibilityState === 'hidden' || (Date.now() - lastAction > 600000)) return;
+            await sb.from('whitelist').update({ last_seen: new Date().toISOString() }).eq('discord_id', user.id);
+            addLog("System pulse synced.");
+        }
+
+        // 4. 实时监听后端命中
+        sb.channel('any').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signals' }, payload => {
+            addLog(`CRITICAL: Match Found! ${payload.new.address.slice(0,8)}... (Score: ${payload.new.score})`, true);
+            document.querySelector('.banana-core').style.boxShadow = "0 0 60px var(--gold)";
+            setTimeout(() => document.querySelector('.banana-core').style.boxShadow = "0 0 30px rgba(241,196,15,0.2)", 800);
+        }).subscribe();
+
+        // 初始化
+        setInterval(heartbeat, 30000);
+        (async () => {
+            const { data: { user } } = await sb.auth.getUser();
+            if(user) {
+                document.getElementById('login-btn').innerText = user.email.split('@')[0];
+                const { data: p } = await sb.from('whitelist').select('member_type').eq('discord_id', user.id).single();
+                if(p?.member_type === 'pro') {
+                    const t = document.getElementById('tier-badge');
+                    t.innerText = "PRO MEMBER"; t.classList.add('pro-tag');
+                }
             }
-            
-            // 检查本地钱包状态 (问题1修复)
-            const savedWallet = localStorage.getItem('banana_wallet');
-            if (savedWallet) {
-                document.getElementById('airdrop-btn').innerHTML = `<i class="fa-solid fa-parachute-box"></i> EARLY ACCESS [ACTIVE]`;
-                document.getElementById('user-wallet').value = savedWallet;
-            }
-            
-            loadSignals();
-            setInterval(loadSignals, 5000);
-        }
-
-        async function login() {
-            await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
-        }
-
-        async function logout() {
-            await sb.auth.signOut();
-            location.reload();
-        }
-
-        // --- 功能逻辑 ---
-        function toggleEarlyAccess() {
-            const box = document.getElementById('early-input-box');
-            box.style.display = box.style.display === 'none' ? 'block' : 'none';
-        }
-
-        async function saveWallet() {
-            const addr = document.getElementById('user-wallet').value.trim();
-            if(!addr) return;
-            localStorage.setItem('banana_wallet', addr);
-            document.getElementById('airdrop-btn').innerHTML = `<i class="fa-solid fa-parachute-box"></i> EARLY ACCESS [ACTIVE]`;
-            
-            // 存入 whitelist
-            await sb.from('whitelist').upsert({ address: addr, min_score: 300 });
-            alert("Wallet synced with your strategy!");
-            toggleEarlyAccess();
-        }
-
-        async function updateBackendStrategy(val) {
-            const addr = localStorage.getItem('banana_wallet');
-            if(!addr) { alert("Please set your wallet in Early Access first!"); return; }
-            await sb.from('whitelist').update({ min_score: parseInt(val) }).eq('address', addr);
-        }
-
-        async function loadSignals() {
-            const { data } = await sb.from('signals').select('*').order('created_at', { ascending: false }).limit(5);
-            if (data && data.length > 0 && data[0].sig !== lastSig) {
-                lastSig = data[0].sig;
-                document.getElementById('status-text').innerText = data[0].taste;
-                renderFeed(data);
-            }
-        }
-
-        function renderFeed(list) {
-            const feed = document.getElementById('history-feed');
-            feed.innerHTML = '<div style="font-size:0.6rem; color:#333; text-align:left; margin-bottom:10px; letter-spacing:1px;">LIVE RADAR FEED</div>';
-            list.forEach(i => {
-                feed.innerHTML += `
-                    <div class="feed-item" onclick="window.open('https://dexscreener.com/solana/${i.address}')">
-                        <div style="text-align:left">
-                            <div style="font-family:monospace; font-size:0.85rem;">${i.address.slice(0,6)}...${i.address.slice(-4)}</div>
-                            <div style="font-size:0.6rem; color:#555; margin-top:4px;">${i.taste.slice(0,40)}...</div>
-                        </div>
-                        <span class="score-tag">${i.score}</span>
-                    </div>`;
-            });
-        }
-
-        async function submitFeedback() {
-            if (!currentUser) {
-                alert("Please Sign In with Google to prevent spam.");
-                return;
-            }
-            const content = document.getElementById('fb-text').value;
-            if(!content) return;
-
-            const { error } = await sb.from('feedbacks').insert([{ 
-                user_id: currentUser.id, 
-                content: content, 
-                source: 'web_sso' 
-            }]);
-
-            if(!error) {
-                alert("Thanks! Your idea is peeling.");
-                document.getElementById('fb-modal').style.display = 'none';
-                document.getElementById('fb-text').value = '';
-            }
-        }
-
-        init();
+        })();
     </script>
 </body>
 </html>
