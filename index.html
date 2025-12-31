@@ -9,140 +9,142 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --bg: #050505; --gold: #f1c40f; --text: #eee; --log-bg: #0f0f0f; }
+        :root { --bg: #050505; --gold: #f1c40f; --text: #eee; --log-bg: #0c0c0c; }
         body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 40px 20px; box-sizing: border-box; }
-        
-        /* 顶部导航 */
-        .header { width: 100%; max-width: 1000px; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
+        .header { width: 100%; max-width: 1000px; display: flex; justify-content: space-between; align-items: flex-start; position: relative; }
         .nav-group { display: flex; flex-direction: column; gap: 10px; }
-        .auth-group { display: flex; gap: 12px; align-items: center; }
-        
         .badge { padding: 10px 18px; border-radius: 30px; border: 1px solid #222; font-size: 0.75rem; cursor: pointer; transition: 0.3s; font-weight: 600; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.02); }
         .badge:hover { border-color: var(--gold); color: var(--gold); }
-
-        /* 参数调节与建议面板 */
-        .config-section { width: 100%; max-width: 500px; background: #111; border: 1px solid #222; border-radius: 15px; padding: 20px; margin-top: 20px; display: flex; gap: 20px; }
-        .config-input-area { flex: 1; }
-        .config-hint { flex: 1; font-size: 0.7rem; color: #666; line-height: 1.6; border-left: 1px solid #222; padding-left: 15px; }
-        input[type="number"] { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 10px; border-radius: 8px; outline: none; margin: 10px 0; font-weight: bold; }
-        
-        /* 核心动画 */
-        .banana-core { width: 100px; height: 100px; background: var(--gold); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; animation: morph 8s infinite ease-in-out; box-shadow: 0 0 50px rgba(241,196,15,0.1); margin: 20px 0; }
-        @keyframes morph { 0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; } 50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; } }
-
-        /* 终端日志窗口 */
-        .log-window { width: 100%; max-width: 500px; background: var(--log-bg); border: 1px solid #222; border-radius: 12px; overflow: hidden; }
-        .log-header { background: #161616; padding: 10px 15px; font-size: 11px; color: #555; display: flex; justify-content: space-between; }
-        #log-content { height: 140px; padding: 15px; font-family: 'Courier New', monospace; font-size: 11px; color: #00ff00; overflow-y: auto; text-align: left; }
-        
+        #early-access-panel { display: none; position: absolute; top: 60px; left: 0; background: #111; padding: 20px; border: 1px solid #333; border-radius: 12px; z-index: 1000; width: 260px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; box-sizing: border-box; outline: none; margin-bottom: 10px; font-size: 13px; }
+        .config-card { width: 100%; max-width: 550px; background: #0f0f0f; border: 1px solid #222; border-radius: 16px; padding: 25px; margin: 30px 0; display: flex; gap: 25px; align-items: center; }
+        .config-main { flex: 1.2; }
+        .config-hint { flex: 1; font-size: 0.7rem; color: #666; line-height: 1.6; border-left: 1px solid #222; padding-left: 20px; }
+        .banana-core { width: 100px; height: 100px; background: var(--gold); border-radius: 50%; animation: pulse 4s infinite ease-in-out; box-shadow: 0 0 50px rgba(241,196,15,0.1); margin: 20px; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; } }
+        #log-window { width: 100%; max-width: 550px; background: var(--log-bg); border: 1px solid #222; border-radius: 12px; padding: 15px; font-family: 'Courier New', monospace; font-size: 11px; color: #00ff00; height: 140px; overflow-y: auto; text-align: left; }
         .user-avatar { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--gold); }
-        .footer { margin-top: auto; padding-top: 40px; display: flex; gap: 30px; }
-        .footer a { color: #444; font-size: 1.4rem; transition: 0.3s; }
+        .footer { margin-top: auto; padding: 40px; display: flex; gap: 40px; }
+        .footer a { color: #444; font-size: 1.5rem; transition: 0.3s; }
         .footer a:hover { color: var(--gold); }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="nav-group">
-            <div id="airdrop-btn" class="badge"><i class="fa-solid fa-parachute-box"></i> EARLY ACCESS</div>
-            <div id="tier-badge" class="badge" onclick="checkTrialStatus()"><i class="fa-solid fa-clock"></i> FREE TRIAL</div>
-        </div>
-        <div class="auth-group">
-            <div id="login-area">
-                <div id="login-btn" class="badge" onclick="login()"><i class="fa-brands fa-google"></i> SIGN IN</div>
+            <div id="airdrop-btn" class="badge" onclick="togglePanel()"><i class="fa-solid fa-parachute-box"></i> EARLY ACCESS</div>
+            <div id="early-access-panel">
+                <input type="text" id="wallet-input" placeholder="Enter Solana Wallet">
+                <button class="badge" style="width:100%; justify-content:center; background:var(--gold); color:#000;" onclick="saveWallet()">SYNC WALLET</button>
             </div>
+            <div id="trial-btn" class="badge" onclick="checkTrial()"><i class="fa-solid fa-clock"></i> FREE TRIAL</div>
+        </div>
+        <div id="auth-area">
+            <div class="badge" onclick="login()"><i class="fa-brands fa-google"></i> SIGN IN</div>
         </div>
     </div>
 
     <div class="banana-core"></div>
     <h1 style="letter-spacing: 6px; font-weight: 300; margin: 0;">MYBANANA.AI</h1>
 
-    <div class="config-section">
-        <div class="config-input-area">
-            <label style="font-size: 0.7rem; color: #888;">MIN RUG-SCORE</label>
+    <div class="config-card">
+        <div class="config-main">
+            <label style="font-size: 0.65rem; color: #555; letter-spacing: 1px;">RADAR THRESHOLD (RUG-SCORE)</label>
             <input type="number" id="score-input" placeholder="300">
-            <button class="badge" style="width: 100%; justify-content: center; border-color: var(--gold);" onclick="updateScore()">UPDATE RADAR</button>
+            <button class="badge" style="width: 100%; justify-content: center; border-color: var(--gold); color: var(--gold);" onclick="updateScore()">SYNC TO RADAR</button>
         </div>
         <div class="config-hint">
-            <strong>建议指南</strong><br>
-            • <b>0-200</b>: 极其安全，信号极少。<br>
-            • <b>200-500</b>: 标准模式，适合多数人。<br>
-            • <b>500+</b>: 高风险高回报，需谨慎。<br>
-            调节后，后端分析引擎将立即同步。
+            <b>GUIDE:</b><br>
+            • <b>0 - 200:</b> Paranoid mode. Top safety.<br>
+            • <b>200 - 500:</b> Balanced mode. Standard.<br>
+            • <b>500+:</b> Degen mode. High risk.<br>
+            <i>Changes sync instantly to the engine.</i>
         </div>
     </div>
 
-    <div class="log-window" style="margin-top: 20px;">
-        <div class="log-header"><span>RADAR LOG</span><span id="live-dot" style="color:var(--gold)">● LIVE</span></div>
-        <div id="log-content"></div>
-    </div>
+    <div id="log-window"></div>
 
     <div class="footer">
-        <a href="https://x.com/mybanbana" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
-        <a href="https://discord.gg/QXgYxWmJF3" target="_blank"><i class="fa-brands fa-discord"></i></a>
-        <a href="https://github.com/your_repo" target="_blank"><i class="fa-brands fa-github"></i></a>
+        <a href="https://x.com/YourAccount" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
+        <a href="https://discord.gg/YourLink" target="_blank"><i class="fa-brands fa-discord"></i></a>
+        <a href="https://github.com/YourRepo" target="_blank"><i class="fa-brands fa-github"></i></a>
     </div>
 
     <script>
         const sb = supabase.createClient("https://ctizvqaqnsavuawprgzu.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA");
-        let lastAction = Date.now();
+        let currentUser = null;
 
-        function addLog(text, isHit = false) {
-            const container = document.getElementById('log-content');
+        function addLog(msg, hit=false) {
+            const win = document.getElementById('log-window');
             const div = document.createElement('div');
-            div.style.color = isHit ? "var(--gold)" : "#00ff00";
-            div.innerText = `[${new Date().toLocaleTimeString([], {hour12:false})}] > ${text}`;
-            container.appendChild(div);
-            container.scrollTop = container.scrollHeight;
-            if(container.childElementCount > 15) container.removeChild(container.firstChild);
+            div.style.color = hit ? "var(--gold)" : "#00ff00";
+            div.innerText = `[${new Date().toLocaleTimeString([], {hour12:false})}] > ${msg}`;
+            win.appendChild(div); win.scrollTop = win.scrollHeight;
+        }
+
+        function togglePanel() {
+            const p = document.getElementById('early-access-panel');
+            p.style.display = p.style.display === 'block' ? 'none' : 'block';
         }
 
         async function login() { await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } }); }
-        async function logout() { await sb.auth.signOut(); window.location.reload(); }
+        async function logout() { await sb.auth.signOut(); location.reload(); }
 
-        async function updateScore() {
-            const score = document.getElementById('score-input').value;
-            const { data: { user } } = await sb.auth.getUser();
-            if (!user) return alert("Please Sign In first!");
-            const { error } = await sb.from('whitelist').update({ min_score: parseInt(score) }).eq('discord_id', user.id);
-            if (!error) { addLog(`Radar threshold updated to ${score}`, true); }
+        async function saveWallet() {
+            const addr = document.getElementById('wallet-input').value;
+            if(!currentUser) return alert("Please Sign In first!");
+            const { error } = await sb.from('whitelist').upsert({ discord_id: currentUser.id, address: addr });
+            if(!error) { addLog("Wallet synced for Early Access.", true); togglePanel(); }
         }
 
-        async function checkTrialStatus() {
-            const { data: { user } } = await sb.auth.getUser();
-            if (!user) return alert("Sign in to check trial status.");
-            const { data } = await sb.from('whitelist').select('expiry_date').eq('discord_id', user.id).single();
-            alert(`Your Free Trial ends at: ${new Date(data.expiry_date).toLocaleString()}`);
+        async function updateScore() {
+    const val = document.getElementById('score-input').value;
+    if(!currentUser) return alert("Sign In Required!");
+    
+    // 确保发送的是字符串 ID
+    const { error } = await sb.from('whitelist').upsert({ 
+        discord_id: String(currentUser.id), 
+        min_score: parseInt(val),
+        last_seen: new Date().toISOString() 
+    }, { onConflict: 'discord_id' });
+    
+    if(!error) addLog(`Radar threshold updated to ${val}`, true);
+    else console.error("Update error:", error);
+        }
+
+        async function checkTrial() {
+            if(!currentUser) return alert("Please Sign In.");
+            const { data } = await sb.from('whitelist').select('expiry_date').eq('discord_id', currentUser.id).single();
+            alert(`Trial Expiry: ${new Date(data?.expiry_date).toLocaleString()}`);
         }
 
         async function heartbeat() {
-            const { data: { user } } = await sb.auth.getUser();
-            if (user && document.visibilityState === 'visible') {
-                await sb.from('whitelist').update({ last_seen: new Date().toISOString() }).eq('discord_id', user.id);
-                addLog("Heartbeat synced.");
+            if(currentUser && document.visibilityState === 'visible') {
+                await sb.from('whitelist').update({ last_seen: new Date().toISOString() }).eq('discord_id', currentUser.id);
+                addLog("Radar pulse synced.");
             }
         }
 
-        // 初始化
-        setInterval(heartbeat, 30000);
         (async () => {
             const { data: { user } } = await sb.auth.getUser();
             if(user) {
-                const avatar = user.user_metadata.avatar_url;
-                document.getElementById('login-area').innerHTML = `
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <img src="${avatar}" class="user-avatar">
-                        <span style="font-size:0.75rem">${user.user_metadata.full_name}</span>
-                        <div class="badge" onclick="logout()" style="padding:5px 10px; border-color:#555">LOGOUT</div>
+                currentUser = user;
+                document.getElementById('auth-area').innerHTML = `
+                    <div style="display:flex; align-items:center; gap:12px">
+                        <img src="${user.user_metadata.avatar_url}" class="user-avatar">
+                        <span style="font-size:12px; color:var(--gold)">${user.user_metadata.full_name.toUpperCase()}</span>
+                        <div class="badge" onclick="logout()" style="border-color:#444">LOGOUT</div>
                     </div>`;
                 const { data } = await sb.from('whitelist').select('min_score').eq('discord_id', user.id).single();
                 if(data) document.getElementById('score-input').value = data.min_score;
+                setInterval(heartbeat, 15000); // 15s heartbeats
             }
         })();
 
         sb.channel('signals').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signals' }, p => {
-            addLog(`SIGNAL HIT: ${p.new.address.slice(0,10)}... (Score: ${p.new.score})`, true);
+            addLog(`ALPHA DETECTED: ${p.new.address.slice(0,12)}...`, true);
         }).subscribe();
     </script>
 </body>
 </html>
+
