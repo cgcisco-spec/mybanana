@@ -97,27 +97,32 @@
             if(!error) { addLog("Wallet synced for Early Access.", true); togglePanel(); }
         }
 
-       async function updateScore() {
+      async function updateScore() {
     const val = document.getElementById('score-input').value;
     if(!currentUser) return alert("Sign In Required!");
     
-    addLog("Syncing settings...");
+    addLog("Sending sync request...");
 
-    const { error } = await sb.from('whitelist').upsert({ 
-        discord_id: String(currentUser.id), 
-        min_score: parseInt(val),
-        last_seen: new Date().toISOString() 
-    }); 
-    // 注意：在最新版 Supabase SDK 中，如果列已经设为 Unique/Primary，
-    // 不需要显式写 { onConflict: 'discord_id' }，它会自动识别。
-
+    // 使用 upsert 并明确告诉 Supabase 使用 discord_id 作为冲突检查标准
+    const { data, error } = await sb.from('whitelist').upsert(
+        { 
+            discord_id: String(currentUser.id), 
+            min_score: parseInt(val),
+            last_seen: new Date().toISOString() 
+        }, 
+        { onConflict: 'discord_id' } // 显式声明冲突列
+    );
+    
     if(!error) {
-        addLog(`✅ Radar threshold updated to ${val}`, true);
+        addLog(`✅ Radar synced! Threshold: ${val}`, true);
+        // 成功后手动调用一次后端感知逻辑
+        console.log("Sync success, hunter is now active.");
     } else {
-        console.error("Update error:", error);
+        console.error("Sync Error:", error);
         addLog(`❌ Sync error: ${error.message}`, false);
     }
 }
+
 
         async function checkTrial() {
             if(!currentUser) return alert("Please Sign In.");
