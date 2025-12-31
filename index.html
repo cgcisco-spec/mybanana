@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,96 +6,150 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyBanana AI | Alpha Radar</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root { --bg: #050505; --gold: #f1c40f; --text: #eee; --log-bg: #0f0f0f; }
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 30px 20px; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 40px 20px; box-sizing: border-box; }
         
-        .header { width: 100%; max-width: 900px; display: flex; justify-content: space-between; margin-bottom: 40px; }
-        .badge { padding: 8px 15px; border-radius: 20px; border: 1px solid #222; font-size: 12px; cursor: pointer; transition: 0.3s; background: rgba(255,255,255,0.02); }
-        .pro-tag { border-color: var(--gold); color: var(--gold); }
+        /* 顶部导航 */
+        .header { width: 100%; max-width: 1000px; display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 60px; }
+        .nav-group { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+        .auth-group { display: flex; gap: 12px; align-items: center; }
+        
+        .badge { padding: 10px 18px; border-radius: 30px; border: 1px solid #222; font-size: 0.75rem; cursor: pointer; transition: 0.3s; font-weight: 600; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.02); }
+        .badge:hover { border-color: var(--gold); color: var(--gold); }
+        .pro-tag { border-color: var(--gold); color: var(--gold); background: rgba(241, 196, 15, 0.05); }
 
-        .banana-core { width: 100px; height: 100px; background: var(--gold); border-radius: 50%; animation: pulse 3s infinite; box-shadow: 0 0 30px rgba(241,196,15,0.2); margin: 20px 0; }
-        @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
+        /* Early Access 面板 */
+        #early-access-panel { background: #111; padding: 20px; border-radius: 15px; border: 1px solid #333; display: none; width: 280px; margin-top: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); z-index: 100; }
+        input { width: 100%; background: #000; border: 1px solid #333; color: #fff; padding: 12px; border-radius: 8px; box-sizing: border-box; outline: none; margin-bottom: 12px; font-size: 13px; }
+        .btn-main { background: var(--gold); color: #000; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-main:hover { transform: scale(1.02); }
 
-        /* 日志窗口 */
-        .log-window { width: 100%; max-width: 500px; background: var(--log-bg); border: 1px solid #222; border-radius: 12px; margin-top: 30px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .log-header { background: #1a1a1a; padding: 10px 15px; font-size: 11px; color: #666; display: flex; justify-content: space-between; border-bottom: 1px solid #222; }
-        #log-content { height: 180px; padding: 15px; font-family: 'Courier New', monospace; font-size: 13px; color: #00ff00; overflow-y: auto; text-align: left; }
-        .log-item { margin-bottom: 6px; opacity: 0.9; border-left: 2px solid #333; padding-left: 8px; }
-        .hit { color: var(--gold); font-weight: bold; border-left-color: var(--gold); }
+        /* 核心动画 */
+        .banana-core { width: 120px; height: 120px; background: var(--gold); border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; animation: morph 8s infinite ease-in-out; box-shadow: 0 0 50px rgba(241,196,15,0.15); margin: 30px 0; }
+        @keyframes morph { 0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; } 50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; } }
 
-        .footer { margin-top: auto; display: flex; gap: 30px; padding: 40px; opacity: 0.4; }
-        .footer i { font-size: 1.5rem; transition: 0.3s; cursor: pointer; }
-        .footer i:hover { color: var(--gold); opacity: 1; }
+        /* 终端日志窗口 */
+        .log-window { width: 100%; max-width: 500px; background: var(--log-bg); border: 1px solid #222; border-radius: 12px; margin-top: 40px; overflow: hidden; }
+        .log-header { background: #161616; padding: 10px 15px; font-size: 11px; color: #555; display: flex; justify-content: space-between; border-bottom: 1px solid #222; letter-spacing: 1px; }
+        #log-content { height: 160px; padding: 15px; font-family: 'Courier New', monospace; font-size: 12px; color: #00ff00; overflow-y: auto; text-align: left; }
+        .log-item { margin-bottom: 6px; opacity: 0.8; }
+        .hit { color: var(--gold); font-weight: bold; text-shadow: 0 0 5px rgba(241,196,15,0.3); }
+
+        /* 用户头像 */
+        .user-avatar { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--gold); }
+
+        .footer { margin-top: auto; padding-top: 60px; display: flex; gap: 30px; }
+        .footer a { color: #444; font-size: 1.4rem; transition: 0.3s; }
+        .footer a:hover { color: var(--gold); }
     </style>
 </head>
 <body>
     <div class="header">
-        <div id="airdrop-btn" class="badge">EARLY ACCESS</div>
-        <div style="display: flex; gap: 10px;">
+        <div class="nav-group">
+            <div id="airdrop-btn" class="badge" onclick="togglePanel()"><i class="fa-solid fa-parachute-box"></i> EARLY ACCESS</div>
+            <div id="early-access-panel">
+                <input type="text" id="wallet-input" placeholder="Enter Solana Wallet">
+                <button class="btn-main" onclick="saveWallet()">SYNC STRATEGY</button>
+            </div>
+        </div>
+        <div class="auth-group">
             <div id="tier-badge" class="badge">FREE TRIAL</div>
-            <div id="login-btn" class="badge" onclick="login()">SIGN IN</div>
+            <div id="login-btn" class="badge" onclick="login()"><i class="fa-brands fa-google"></i> SIGN IN</div>
         </div>
     </div>
 
     <div class="banana-core"></div>
-    <h1 style="letter-spacing: 5px; font-weight: 200;">MYBANANA.AI</h1>
-    
+    <h1 style="letter-spacing: 6px; font-weight: 300; margin: 0;">MYBANANA.AI</h1>
+    <p style="color: #444; font-size: 0.75rem; margin-top: 10px; letter-spacing: 2px;">PEELING THE CHAIN IN REAL-TIME</p>
+
     <div class="log-window">
-        <div class="log-header"><span>TERMINAL v1.0</span><span id="live-dot" style="color:var(--gold)">● LIVE</span></div>
+        <div class="log-header"><span>SYSTEM STATUS: RUNNING</span><span id="live-dot" style="color:var(--gold)">● LIVE</span></div>
         <div id="log-content">
-            <div class="log-item">> Initializing engine...</div>
-            <div class="log-item">> Connecting to Solana Mainnet...</div>
+            <div class="log-item">> Initializing Banana Engine v11.0...</div>
+            <div class="log-item">> Establishing RPC handshake...</div>
         </div>
     </div>
 
     <div class="footer">
-        <i class="fa-brands fa-x-twitter"></i>
-        <i class="fa-brands fa-discord"></i>
-        <i class="fa-brands fa-github"></i>
+        <a href="#"><i class="fa-brands fa-x-twitter"></i></a>
+        <a href="#"><i class="fa-brands fa-discord"></i></a>
+        <a href="#"><i class="fa-brands fa-github"></i></a>
     </div>
 
     <script>
         const sb = supabase.createClient("https://ctizvqaqnsavuawprgzu.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA");
         let lastAction = Date.now();
 
-        // 1. 日志控制
+        // 1. 交互与面板切换
+        function togglePanel() {
+            const p = document.getElementById('early-access-panel');
+            p.style.display = p.style.display === 'block' ? 'none' : 'block';
+        }
+
+        ['mousemove','click','keydown','touchstart'].forEach(e => {
+            document.addEventListener(e, () => { lastAction = Date.now(); }, {passive: true});
+        });
+
+        // 2. 日志逻辑
         function addLog(text, isHit = false) {
             const container = document.getElementById('log-content');
             const div = document.createElement('div');
             div.className = isHit ? 'log-item hit' : 'log-item';
-            div.innerText = `[${new Date().toLocaleTimeString()}] > ${text}`;
+            div.innerText = `[${new Date().toLocaleTimeString([], {hour12:false})}] > ${text}`;
             container.appendChild(div);
             container.scrollTop = container.scrollHeight;
-            if(container.childElementCount > 25) container.removeChild(container.firstChild);
+            if(container.childElementCount > 20) container.removeChild(container.firstChild);
         }
 
-        // 2. 交互与登录
-        ['mousemove','click','keydown'].forEach(e => document.addEventListener(e, () => lastAction = Date.now()));
-        async function login() { await sb.auth.signInWithOAuth({ provider: 'google' }); }
+        // 3. 登录与状态同步
+        async function login() { await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } }); }
 
-        // 3. 心跳同步
+        async function saveWallet() {
+            const addr = document.getElementById('wallet-input').value.trim();
+            if(!addr) return;
+            localStorage.setItem('banana_wallet', addr);
+            updateEarlyAccessUI(true);
+            togglePanel();
+            addLog("Wallet synced: " + addr.slice(0,6) + "...");
+        }
+
+        function updateEarlyAccessUI(active) {
+            const btn = document.getElementById('airdrop-btn');
+            btn.innerHTML = active ? `<i class="fa-solid fa-parachute-box"></i> EARLY ACCESS [ACTIVE]` : `<i class="fa-solid fa-parachute-box"></i> EARLY ACCESS`;
+        }
+
         async function heartbeat() {
             const { data: { user } } = await sb.auth.getUser();
             if (!user || document.visibilityState === 'hidden' || (Date.now() - lastAction > 600000)) return;
             await sb.from('whitelist').update({ last_seen: new Date().toISOString() }).eq('discord_id', user.id);
-            addLog("System pulse synced.");
+            addLog("Heartbeat synced to mainnet.");
         }
 
-        // 4. 实时监听后端命中
-        sb.channel('any').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signals' }, payload => {
-            addLog(`CRITICAL: Match Found! ${payload.new.address.slice(0,8)}... (Score: ${payload.new.score})`, true);
-            document.querySelector('.banana-core').style.boxShadow = "0 0 60px var(--gold)";
-            setTimeout(() => document.querySelector('.banana-core').style.boxShadow = "0 0 30px rgba(241,196,15,0.2)", 800);
+        // 4. 实时监听 (Supabase Realtime)
+        sb.channel('signals_live').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signals' }, payload => {
+            addLog(`CRITICAL HIT: ${payload.new.address.slice(0,8)}... (Score: ${payload.new.score})`, true);
+            const core = document.querySelector('.banana-core');
+            core.style.boxShadow = "0 0 80px var(--gold)";
+            setTimeout(() => core.style.boxShadow = "0 0 30px rgba(241,196,15,0.15)", 1000);
         }).subscribe();
 
         // 初始化
         setInterval(heartbeat, 30000);
         (async () => {
             const { data: { user } } = await sb.auth.getUser();
+            if(localStorage.getItem('banana_wallet')) updateEarlyAccessUI(true);
+            
             if(user) {
-                document.getElementById('login-btn').innerText = user.email.split('@')[0];
+                const userName = user.user_metadata.full_name || user.email.split('@')[0];
+                const avatar = user.user_metadata.avatar_url;
+                
+                document.getElementById('login-btn').innerHTML = avatar ? 
+                    `<img src="${avatar}" class="user-avatar"> ${userName.toUpperCase()}` : 
+                    `<i class="fa-solid fa-user"></i> ${userName.toUpperCase()}`;
+                
                 const { data: p } = await sb.from('whitelist').select('member_type').eq('discord_id', user.id).single();
                 if(p?.member_type === 'pro') {
                     const t = document.getElementById('tier-badge');
