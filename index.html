@@ -97,20 +97,27 @@
             if(!error) { addLog("Wallet synced for Early Access.", true); togglePanel(); }
         }
 
-        async function updateScore() {
+       async function updateScore() {
     const val = document.getElementById('score-input').value;
     if(!currentUser) return alert("Sign In Required!");
     
-    // 确保发送的是字符串 ID
+    addLog("Syncing settings...");
+
     const { error } = await sb.from('whitelist').upsert({ 
         discord_id: String(currentUser.id), 
         min_score: parseInt(val),
         last_seen: new Date().toISOString() 
-    }, { onConflict: 'discord_id' });
-    
-    if(!error) addLog(`Radar threshold updated to ${val}`, true);
-    else console.error("Update error:", error);
-        }
+    }); 
+    // 注意：在最新版 Supabase SDK 中，如果列已经设为 Unique/Primary，
+    // 不需要显式写 { onConflict: 'discord_id' }，它会自动识别。
+
+    if(!error) {
+        addLog(`✅ Radar threshold updated to ${val}`, true);
+    } else {
+        console.error("Update error:", error);
+        addLog(`❌ Sync error: ${error.message}`, false);
+    }
+}
 
         async function checkTrial() {
             if(!currentUser) return alert("Please Sign In.");
@@ -147,4 +154,3 @@
     </script>
 </body>
 </html>
-
