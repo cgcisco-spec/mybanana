@@ -92,28 +92,58 @@
         async function logout() { await sb.auth.signOut(); location.reload(); }
 
         async function saveWallet() {
-            const addr = document.getElementById('wallet-input').value;
-            if(!currentUser) return alert("Please Sign In first!");
-            const { error } = await sb.from('whitelist').upsert({ discord_id: currentUser.id, address: addr });
-            if(!error) { addLog("Wallet synced for Early Access.", true); togglePanel(); }
-        }
-
-      async function updateScore() {
-    const val = document.getElementById('score-input').value;
-    if(!currentUser) return alert("Sign In Required!");
+    // 1. 获取输入框里的钱包地址
+    const addr = document.getElementById('wallet-input').value;
     
-    // 只发送 discord_id 和你想更新的字段
-    // 数据库会根据 discord_id 主键自动判断是“更新”还是“插入”
+    // 2. 检查用户是否已通过 Google 登录
+    if(!currentUser) {
+        alert("Please Sign In first!");
+        return;
+    }
+    
+    // 3. 检查是否填写了钱包地址
+    if(!addr) {
+        alert("Please enter a Solana wallet address!");
+        return;
+    }
+
+    addLog("Syncing wallet to profile...");
+
+    // 4. 执行数据库更新操作
+    // 因为我们在 SQL 里把 discord_id 设为了主键 (Primary Key)
+    // 这里的 upsert 会自动找到对应的行并更新 address，不会再报 409 冲突
     const { error } = await sb.from('whitelist').upsert({ 
         discord_id: String(currentUser.id), 
-        min_score: parseInt(val),
-        last_seen: new Date().toISOString() 
+        address: addr,                      
+        last_seen: new Date().toISOString()
     });
 
-    if(!error) {
-        addLog(`✅ Synced. Radar threshold is now ${val}`, true);
+    if(!error) { 
+        addLog("✅ Wallet linked successfully!", true); 
+        // 成功后关闭填写面板
+        if(typeof togglePanel === "function") togglePanel(); 
     } else {
-        addLog(`❌ Sync error: ${error.message}`);
+        // 如果依然报错，在浏览器控制台打印具体原因
+        console.error("Conflict Error Details:", error);
+        addLog(`❌ Sync Failed: ${error.message}`);
+        alert("Sync Failed: " + error.message);
+    }
+}
+
+
+      async function updateScore() {
+     const { error } = await sb.from('whitelist').upsert({ 
+        discord_id: String(currentUser.id), // 唯一主键
+        address: addr,                      // 要更新的钱包地址
+        last_seen: new Date().toISOString()
+    });
+
+    if(!error) { 
+        addLog("✅ Wallet linked for Early Access.", true); 
+        togglePanel(); 
+    } else {
+        console.error("Conflict Error Details:", error);
+        addLog(`❌ Sync Failed: ${error.message}`);
     }
 }
 
