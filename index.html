@@ -149,7 +149,8 @@
                 }
                 
                 addLog("Initiating transaction...");
-                const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
+                const HELIUS_RPC = "https://mainnet.helius-rpc.com/?api-key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
+const connection = new solanaWeb3.Connection(HELIUS_RPC);
                 const fromPubkey = window.solana.publicKey;
                 const toPubkey = new solanaWeb3.PublicKey(MY_RECEIVE_WALLET);
 
