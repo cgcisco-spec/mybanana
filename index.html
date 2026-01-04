@@ -167,32 +167,34 @@
         }
 
         async function updateScore() {
-    // 优先从内存拿，拿不到去本地存储拿
+    // 强制尝试从 localStorage 找回钱包地址
     const activeId = currentUser.id || localStorage.getItem('active_wallet');
     
     if(!activeId) {
-        addLog("Identity lost, please reconnect.");
+        addLog("Identity not found. Reconnecting...");
         return openModal();
     }
     
-    const score = document.getElementById('score-input').value;
-    addLog("Syncing threshold: " + score + "...");
+    const scoreInput = document.getElementById('score-input');
+    const scoreValue = parseInt(scoreInput.value);
+    
+    addLog(`Syncing threshold ${scoreValue} for ${activeId.slice(0,6)}...`);
 
     const { error } = await sb.from('whitelist')
         .update({ 
-            min_score: parseInt(score), 
+            min_score: scoreValue, 
             last_seen: new Date().toISOString() 
         })
         .eq('wallet_address', activeId);
 
     if(!error) {
-        addLog("✅ Configuration Synced!", true);
+        addLog("✅ Configuration saved!", true);
     } else {
-        addLog("❌ Sync Failed: " + error.message);
-        // 如果报错说没权限，可能是 RLS 策略只允许匹配 UID
-        console.error(error);
+        addLog("❌ Sync Error: " + error.message);
+        // 如果这里报错，请检查 Supabase 对应表的 RLS Policy 是否开启了 UPDATE 权限
     }
 }
+
 
         async function linkDiscord() {
             // 确保跳转前钱包地址在存储中
