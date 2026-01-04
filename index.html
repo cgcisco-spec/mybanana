@@ -106,6 +106,7 @@
                 await sb.from('whitelist').upsert({ 
                     wallet_address: email, 
                     last_seen: new Date().toISOString() 
+                    auth_method:'google'
                 }, { onConflict: 'wallet_address' });
 
                 // 3. 如果是 Discord 回调，更新 ID
