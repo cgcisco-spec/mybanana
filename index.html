@@ -1,59 +1,55 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBanana AI | Alpha Radar</title>
+    <title>Banana Radar | Smart Scanner</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        :root { --gold: #f1c40f; --bg: #080808; --card: #121212; --border: #222; }
+        :root { --gold: #f1c40f; --bg: #0a0a0a; --card: #161616; --border: #262626; }
         body { background: var(--bg); color: #fff; font-family: 'Space Grotesk', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 420px; padding: 40px 20px; }
-        .nav { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
-        .radar-panel { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-        .btn { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: #1a1a1a; color: #fff; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; }
-        .btn:hover { border-color: var(--gold); background: #222; }
+        .container { width: 100%; max-width: 400px; padding: 50px 20px; }
+        .radar-panel { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); text-align: center; }
+        .btn { width: 100%; padding: 15px; border-radius: 14px; border: 1px solid var(--border); background: #222; color: #fff; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; transition: 0.2s; }
+        .btn:hover { border-color: var(--gold); background: #282828; }
         .btn-gold { background: var(--gold); color: #000; border: none; }
-        .btn-discord { color: #5865F2; border-color: #5865F2; }
-        input { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 15px; border-radius: 12px; font-size: 1.2rem; margin: 10px 0; text-align: center; box-sizing: border-box; }
-        #console { background: #000; border-radius: 10px; padding: 12px; height: 80px; overflow-y: auto; font-family: monospace; font-size: 0.7rem; color: #555; margin-top: 15px; }
+        .btn-discord { color: #5865F2; border-color: #5865F2; margin-top: 15px; }
+        input { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 16px; border-radius: 12px; font-size: 1.2rem; margin: 15px 0; text-align: center; box-sizing: border-box; }
+        #console { background: #000; border-radius: 10px; padding: 12px; height: 60px; overflow-y: auto; font-family: monospace; font-size: 0.7rem; color: #444; margin-top: 20px; border: 1px solid #111; text-align: left; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <div class="nav">
+        <div class="radar-panel">
+            <h1 style="letter-spacing: 2px; margin-bottom: 5px;">BANANA <span style="color:var(--gold)">RADAR</span></h1>
+            <p style="font-size: 0.75rem; color: #666; margin-bottom: 30px;">AI-POWERED SOLANA SIGNALS</p>
+
             <div id="logged-out-view">
                 <button class="btn btn-gold" onclick="loginGoogle()">
-                    <img src="https://www.google.com/favicon.ico" width="16"> Login with Google
-                </button>
-                <div style="text-align: center; font-size: 0.7rem; color: #444; margin: 10px 0;">OR</div>
-                <button class="btn" onclick="connectWallet()">
-                    <i class="fa-solid fa-wallet"></i> Connect Wallet
+                    <img src="https://www.google.com/favicon.ico" width="16"> CONTINUE WITH GOOGLE
                 </button>
             </div>
             
-            <div id="logged-in-view" style="display: none; text-align: center;">
-                <div id="user-display" style="font-weight: 700; margin-bottom: 5px;">User</div>
-                <button class="btn btn-discord" id="discord-link-btn" onclick="linkDiscord()">
-                    <i class="fa-brands fa-discord"></i> Link Discord for Alerts
-                </button>
-                <a href="javascript:logout()" style="color:#444; font-size:0.7rem; text-decoration:none; display:block; margin-top:10px;">Logout</a>
-            </div>
-        </div>
+            <div id="logged-in-view" style="display: none;">
+                <div id="user-email" style="font-weight: 700; color: var(--gold); margin-bottom: 10px;">User</div>
+                
+                <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 15px; margin: 20px 0;">
+                    <label style="font-size: 0.65rem; color: #555; display: block; margin-bottom: 10px;">SIGNAL SENSITIVITY (0-1000)</label>
+                    <input type="number" id="score-input" value="300">
+                    <button class="btn btn-gold" style="height: 45px;" onclick="updateScore()">SAVE SETTINGS</button>
+                </div>
 
-        <div class="radar-panel">
-            <h2 style="text-align:center; margin:0 0 20px 0; letter-spacing: 2px;">BANANA <span style="color:var(--gold)">RADAR</span></h2>
-            
-            <label style="font-size: 0.7rem; color: #555;">SCANNER SENSITIVITY (RUG-SCORE)</label>
-            <input type="number" id="score-input" value="300">
-            
-            <button class="btn btn-gold" onclick="updateScore()">SAVE SETTINGS</button>
+                <button class="btn btn-discord" id="discord-link-btn" onclick="linkDiscord()">
+                    <i class="fa-brands fa-discord"></i> LINK DISCORD BOT
+                </button>
+                
+                <a href="javascript:logout()" style="color:#333; font-size:0.7rem; text-decoration:none; display:block; margin-top:20px;">Sign Out</a>
+            </div>
+
             <div id="console"></div>
         </div>
     </div>
@@ -62,7 +58,6 @@
         const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        let currentUserAddr = null;
 
         function addLog(msg) {
             const d = document.createElement('div');
@@ -70,92 +65,65 @@
             document.getElementById('console').prepend(d);
         }
 
-        async function toggleUI(loggedIn, info = "") {
-            document.getElementById('logged-out-view').style.display = loggedIn ? 'none' : 'block';
-            document.getElementById('logged-in-view').style.display = loggedIn ? 'block' : 'none';
-            if(loggedIn) {
-                document.getElementById('user-display').innerText = info.includes('@') ? info : info.slice(0,6)+'...'+info.slice(-4);
-                // 检查是否绑定 Discord
-                const { data } = await sb.from('whitelist').select('discord_id').eq('wallet_address', info).single();
-                if(data?.discord_id) {
-                    const btn = document.getElementById('discord-link-btn');
-                    btn.innerHTML = '✅ DISCORD LINKED'; btn.style.color = '#4ade80'; btn.onclick = null;
-                }
-            }
-        }
-
         async function loginGoogle() {
-            await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
-        }
-
-        async function connectWallet() {
-            if (!window.solana) return addLog("Phantom not found");
-            const resp = await window.solana.connect();
-            const addr = resp.publicKey.toString();
-            localStorage.setItem('active_wallet', addr);
-            await sb.from('whitelist').upsert({ wallet_address: addr, last_seen: new Date().toISOString() });
-            toggleUI(true, addr);
-        }
-
-        async function updateScore() {
-            const addr = localStorage.getItem('active_wallet');
-            if(!addr) return addLog("Please login first");
-            const score = document.getElementById('score-input').value;
-            await sb.from('whitelist').update({ min_score: parseInt(score) }).eq('wallet_address', addr);
-            addLog("Settings updated: " + score);
+            await sb.auth.signInWithOAuth({ 
+                provider: 'google', 
+                options: { redirectTo: window.location.origin } 
+            });
         }
 
         async function linkDiscord() {
-            const addr = localStorage.getItem('active_wallet');
-            if(!addr) return addLog("Connect wallet first!");
-            await sb.auth.signInWithOAuth({ provider: 'discord', options: { redirectTo: window.location.origin } });
+            addLog("Redirecting to Discord...");
+            await sb.auth.signInWithOAuth({ 
+                provider: 'discord', 
+                options: { redirectTo: window.location.origin } 
+            });
         }
 
-        function logout() { localStorage.clear(); location.reload(); }
+        async function updateScore() {
+            const { data: { user } } = await sb.auth.getUser();
+            if(!user) return;
+            const score = document.getElementById('score-input').value;
+            await sb.from('whitelist').update({ min_score: parseInt(score) }).eq('wallet_address', user.email);
+            addLog("Settings saved!", true);
+        }
+
+        function logout() { sb.auth.signOut(); location.reload(); }
 
         (async () => {
-    // 1. 获取当前 Supabase 会话中的用户信息
-    const { data: { user } } = await sb.auth.getUser();
-    const savedWallet = localStorage.getItem('active_wallet');
-    
-    addLog("System Initializing...");
+            const { data: { user } } = await sb.auth.getUser();
+            if (user) {
+                const provider = user.app_metadata.provider;
+                document.getElementById('logged-out-view').style.display = 'none';
+                document.getElementById('logged-in-view').style.display = 'block';
+                
+                // 1. 获取 Email（作为唯一主键）
+                // 注意：由于没有钱包，我们直接用 email 填充数据库的 wallet_address 字段
+                const email = user.email;
+                document.getElementById('user-email').innerText = email;
 
-    if (user) {
-        // 2. 检查用户是通过哪个供应商登录的
-        const provider = user.app_metadata.provider;
-        const discordId = user.user_metadata.sub; // Discord 的唯一 ID
+                // 2. 写入/更新基础信息
+                await sb.from('whitelist').upsert({ 
+                    wallet_address: email, 
+                    last_seen: new Date().toISOString() 
+                }, { onConflict: 'wallet_address' });
 
-        if (provider === 'discord' && savedWallet) {
-            // 场景：用户点击了 "Link Discord"，现在刚从 Discord 授权跳转回来
-            addLog("Finalizing Discord link...");
-            const { error } = await sb.from('whitelist')
-                .update({ discord_id: discordId })
-                .eq('wallet_address', savedWallet);
-            
-            if (!error) {
-                addLog("✅ Discord Linked Successfully!", true);
-            } else {
-                addLog("❌ Link Error: " + error.message);
+                // 3. 如果是 Discord 回调，更新 ID
+                if (provider === 'discord') {
+                    await sb.from('whitelist').update({ 
+                        discord_id: user.user_metadata.sub 
+                    }).eq('wallet_address', email);
+                    
+                    const btn = document.getElementById('discord-link-btn');
+                    btn.innerHTML = '✅ DISCORD LINKED';
+                    btn.style.borderColor = '#4ade80';
+                    btn.style.color = '#4ade80';
+                    btn.onclick = null;
+                    addLog("Discord synchronized.");
+                }
             }
-        } else if (provider === 'google' && !savedWallet) {
-            // 场景：用户第一次用 Google 登录
-            const email = user.email;
-            localStorage.setItem('active_wallet', email);
-            await sb.from('whitelist').upsert({ 
-                wallet_address: email, 
-                last_seen: new Date().toISOString() 
-            }, { onConflict: 'wallet_address' });
-            addLog("Logged in via Google.");
-        }
-    }
-
-    // 3. 最终刷新 UI
-    const finalWallet = localStorage.getItem('active_wallet');
-    if (finalWallet) {
-        currentUserAddr = finalWallet;
-        toggleUI(true, finalWallet);
-    }
-})();
+            addLog("System ready.");
+        })();
     </script>
 </body>
 </html>
