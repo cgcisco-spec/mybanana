@@ -185,27 +185,44 @@
 
         // 初始化/授权回调处理
         (async () => {
-            const { data: { user } } = await sb.auth.getUser();
-            const savedWallet = localStorage.getItem('active_wallet');
+            // 强制等待 1 秒，让 Supabase 处理完 URL 中的 Access Token
+    await new Promise(r => setTimeout(r, 1000)); 
+    
+    const { data: { session } } = await sb.auth.getSession();
+    const user = session?.user;
+    const savedWallet = localStorage.getItem('active_wallet');
+
+    if (user) {
+        addLog(`System Auth Detected: ${user.app_metadata.provider}`);
+
+        // 核心修复：无论 provider 是什么，只要是绑定流程且有钱包地址
+        if (savedWallet) {
+            // 尝试从不同的 metadata 字段提取 Discord ID
+            const discordId = user.user_metadata.sub || user.app_metadata.provider_id || user.id;
             
-            if (user) {
-                // 处理 Discord 绑定回调
-                if (user.app_metadata.provider === 'discord' && savedWallet) {
-                    addLog("Discord Callback: Finalizing link...");
-                    const { error } = await sb.from('whitelist')
-                        .update({ discord_id: user.user_metadata.sub })
-                        .eq('wallet_address', savedWallet);
-                    if(!error) addLog("Discord Link Successful!", true);
-                    else addLog("Link Error: " + error.message);
-                }
-                currentUser = { id: savedWallet || user.id };
-                toggleUI(true, currentUser.id);
-            } else if (savedWallet) {
-                currentUser = { id: savedWallet };
-                toggleUI(true, savedWallet);
+            addLog("Executing Force Link to: " + savedWallet.slice(0,6));
+
+            // 使用 upsert 确保即使行不存在也能创建，存在则更新
+            const { error } = await sb.from('whitelist').upsert({
+                wallet_address: savedWallet,
+                discord_id: discordId,
+                auth_method: 'mixed',
+                last_seen: new Date().toISOString()
+            }, { onConflict: 'wallet_address' });
+
+            if (!error) {
+                addLog("✅ Discord Bound: " + discordId, true);
+            } else {
+                addLog("❌ Update Failed: " + error.message);
+                // 打印错误到控制台方便截图
+                console.error("Supabase Error:", error);
             }
-            addLog("Radar system initialized.");
-        })();
+        }
+        toggleUI(true, savedWallet || user.id);
+    } else if (savedWallet) {
+        toggleUI(true, savedWallet);
+    }
+})();
     </script>
 </body>
 </html>
