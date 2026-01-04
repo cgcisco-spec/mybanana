@@ -105,7 +105,7 @@
                 // 2. 写入/更新基础信息
                 await sb.from('whitelist').upsert({ 
                     wallet_address: email, 
-                    last_seen: new Date().toISOString() 
+                    last_seen: new Date().toISOString(), 
                     auth_method:'google'
                 }, { onConflict: 'wallet_address' });
 
