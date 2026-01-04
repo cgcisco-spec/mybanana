@@ -123,49 +123,76 @@
         }
 
         async function connectWallet(type) {
-            closeModal();
-            try {
-                let addr = "";
-                if (type === 'phantom') {
-                    if (!window.solana?.isPhantom) return window.open("https://phantom.app/", "_blank");
-                    const resp = await window.solana.connect();
-                    addr = resp.publicKey.toString();
-                } else if (type === 'metamask') {
-                    let provider = window.ethereum;
-                    if (window.ethereum?.providers) {
-                        provider = window.ethereum.providers.find(p => p.isMetaMask) || window.ethereum;
-                    }
-                    const accounts = await provider.request({ method: 'eth_requestAccounts' });
-                    addr = accounts[0];
-                }
-                
-                if(addr) {
-                    currentUser = { id: addr, method: 'wallet' };
-                    localStorage.setItem('active_wallet', addr);
-                    await sb.from('whitelist').upsert({ 
-                        wallet_address: addr, 
-                        auth_method: 'wallet', 
-                        last_seen: new Date().toISOString() 
-                    }, { onConflict: 'wallet_address' });
-                    toggleUI(true, addr);
-                    addLog("Wallet connected: " + type, true);
-                }
-            } catch (e) { addLog("Connection failed: " + e.message); }
+    try {
+        let addr = "";
+        if (type === 'phantom') {
+            if (!window.solana) {
+                addLog("Phantom not found!");
+                return window.open("https://phantom.app/", "_blank");
+            }
+            const resp = await window.solana.connect();
+            addr = resp.publicKey.toString();
+        } else if (type === 'metamask') {
+            if (!window.ethereum) {
+                addLog("MetaMask not found!");
+                return window.open("https://metamask.io/", "_blank");
+            }
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            addr = accounts[0];
         }
+        
+        if(addr) {
+            currentUser = { id: addr, method: 'wallet' };
+            localStorage.setItem('active_wallet', addr);
+            
+            // 确保数据库里有这一行
+            await sb.from('whitelist').upsert({ 
+                wallet_address: addr, 
+                auth_method: 'wallet', 
+                last_seen: new Date().toISOString() 
+            }, { onConflict: 'wallet_address' });
+            
+            toggleUI(true, addr);
+            addLog("Connected: " + addr.slice(0,6), true);
+            closeModal(); // 成功后再关闭
+        }
+    } catch (e) { 
+        addLog("Error: " + e.message);
+        // 不要关弹窗，让用户看清楚报错或重试
+    }
+}
 
         async function loginSocial(provider) {
             await sb.auth.signInWithOAuth({ provider, options: { redirectTo: window.location.origin } });
         }
 
         async function updateScore() {
-            if(!currentUser.id) return openModal();
-            const score = document.getElementById('score-input').value;
-            const { error } = await sb.from('whitelist').update({ 
-                min_score: parseInt(score), 
-                last_seen: new Date().toISOString() 
-            }).eq('wallet_address', currentUser.id);
-            if(!error) addLog("Threshold updated to " + score, true);
-        }
+    // 优先从内存拿，拿不到去本地存储拿
+    const activeId = currentUser.id || localStorage.getItem('active_wallet');
+    
+    if(!activeId) {
+        addLog("Identity lost, please reconnect.");
+        return openModal();
+    }
+    
+    const score = document.getElementById('score-input').value;
+    addLog("Syncing threshold: " + score + "...");
+
+    const { error } = await sb.from('whitelist')
+        .update({ 
+            min_score: parseInt(score), 
+            last_seen: new Date().toISOString() 
+        })
+        .eq('wallet_address', activeId);
+
+    if(!error) {
+        addLog("✅ Configuration Synced!", true);
+    } else {
+        addLog("❌ Sync Failed: " + error.message);
+        // 如果报错说没权限，可能是 RLS 策略只允许匹配 UID
+        console.error(error);
+    }
+}
 
         async function linkDiscord() {
             // 确保跳转前钱包地址在存储中
@@ -185,7 +212,7 @@
 
         // 初始化/授权回调处理
         (async () => {
-            // 强制等待 1 秒，让 Supabase 处理完 URL 中的 Access Token
+             // 强制等待 1 秒，让 Supabase 处理完 URL 中的 Access Token
     await new Promise(r => setTimeout(r, 1000)); 
     
     const { data: { session } } = await sb.auth.getSession();
