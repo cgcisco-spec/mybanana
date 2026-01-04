@@ -114,25 +114,48 @@
         function logout() { localStorage.clear(); location.reload(); }
 
         (async () => {
-            const { data: { user } } = await sb.auth.getUser();
-            const savedWallet = localStorage.getItem('active_wallet');
+    // 1. 获取当前 Supabase 会话中的用户信息
+    const { data: { user } } = await sb.auth.getUser();
+    const savedWallet = localStorage.getItem('active_wallet');
+    
+    addLog("System Initializing...");
+
+    if (user) {
+        // 2. 检查用户是通过哪个供应商登录的
+        const provider = user.app_metadata.provider;
+        const discordId = user.user_metadata.sub; // Discord 的唯一 ID
+
+        if (provider === 'discord' && savedWallet) {
+            // 场景：用户点击了 "Link Discord"，现在刚从 Discord 授权跳转回来
+            addLog("Finalizing Discord link...");
+            const { error } = await sb.from('whitelist')
+                .update({ discord_id: discordId })
+                .eq('wallet_address', savedWallet);
             
-            // 处理 Google/Discord 回调
-            if (user) {
-                const identity = user.email || user.user_metadata.full_name;
-                // 如果是 Google 登录，我们临时用 email 作为唯一标识存入 whitelist
-                if (!savedWallet) {
-                    localStorage.setItem('active_wallet', user.email);
-                    await sb.from('whitelist').upsert({ wallet_address: user.email, last_seen: new Date().toISOString() });
-                } else if (user.app_metadata.provider === 'discord') {
-                    // 如果是 Discord 绑定回调
-                    await sb.from('whitelist').update({ discord_id: user.user_metadata.sub }).eq('wallet_address', savedWallet);
-                }
-                toggleUI(true, localStorage.getItem('active_wallet'));
-            } else if (savedWallet) {
-                toggleUI(true, savedWallet);
+            if (!error) {
+                addLog("✅ Discord Linked Successfully!", true);
+            } else {
+                addLog("❌ Link Error: " + error.message);
             }
-        })();
+        } else if (provider === 'google' && !savedWallet) {
+            // 场景：用户第一次用 Google 登录
+            const email = user.email;
+            localStorage.setItem('active_wallet', email);
+            await sb.from('whitelist').upsert({ 
+                wallet_address: email, 
+                last_seen: new Date().toISOString() 
+            }, { onConflict: 'wallet_address' });
+            addLog("Logged in via Google.");
+        }
+    }
+
+    // 3. 最终刷新 UI
+    const finalWallet = localStorage.getItem('active_wallet');
+    if (finalWallet) {
+        currentUserAddr = finalWallet;
+        toggleUI(true, finalWallet);
+    }
+})();
     </script>
 </body>
 </html>
