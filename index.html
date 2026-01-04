@@ -4,31 +4,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBanana AI | Alpha Radar Pro</title>
+    <title>MyBanana AI | Alpha Radar</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍌</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        :root { --gold: #f1c40f; --cyan: #00f2ff; --bg: #080808; --card: rgba(18, 18, 18, 0.98); --border: #222; }
-        body { background: radial-gradient(circle at center, #111 0%, #080808 100%); color: #fff; font-family: 'Space Grotesk', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 480px; padding: 40px 20px; z-index: 2; }
-        .nav { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 30px; }
-        .user-tag { font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; }
-        .status-badge { font-size: 0.7rem; padding: 4px 12px; border-radius: 20px; background: #000; border: 1px solid var(--gold); color: var(--gold); text-transform: uppercase; margin-top: 5px; }
-        .radar-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 30px; border-top: 4px solid var(--gold); box-shadow: 0 25px 50px rgba(0,0,0,0.8); }
-        .pro-card { background: linear-gradient(135deg, rgba(241,196,15,0.1) 0%, rgba(0,0,0,0) 100%); border: 1px dashed var(--gold); border-radius: 16px; padding: 20px; margin-bottom: 25px; text-align: center; }
-        input { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 15px; border-radius: 12px; font-size: 1.2rem; margin: 15px 0; outline: none; text-align: center; box-sizing: border-box; font-family: monospace; }
-        .btn { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: #1a1a1a; color: #fff; cursor: pointer; transition: 0.3s; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
-        .btn:hover { border-color: var(--gold); transform: translateY(-2px); }
+        :root { --gold: #f1c40f; --bg: #080808; --card: #121212; --border: #222; }
+        body { background: var(--bg); color: #fff; font-family: 'Space Grotesk', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 420px; padding: 40px 20px; }
+        .nav { display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px; }
+        .radar-panel { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .btn { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: #1a1a1a; color: #fff; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; }
+        .btn:hover { border-color: var(--gold); background: #222; }
         .btn-gold { background: var(--gold); color: #000; border: none; }
-        .btn-discord { color: #5865F2; border-color: #5865F2; margin-top: 10px; }
-        #console { background: #000; border-radius: 12px; padding: 15px; height: 100px; overflow-y: auto; font-family: monospace; font-size: 0.75rem; color: #666; margin-top: 20px; border: 1px solid #111; }
-        .log-hit { color: var(--gold); font-weight: bold; }
-        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:1000; justify-content:center; align-items:center; backdrop-filter: blur(10px); }
-        .modal-content { background:#111; border:1px solid #333; border-radius:24px; width:90%; max-width:340px; padding:30px; }
+        .btn-discord { color: #5865F2; border-color: #5865F2; }
+        input { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 15px; border-radius: 12px; font-size: 1.2rem; margin: 10px 0; text-align: center; box-sizing: border-box; }
+        #console { background: #000; border-radius: 10px; padding: 12px; height: 80px; overflow-y: auto; font-family: monospace; font-size: 0.7rem; color: #555; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -36,90 +29,57 @@
     <div class="container">
         <div class="nav">
             <div id="logged-out-view">
-                <button class="btn btn-gold" onclick="openModal()"><i class="fa-solid fa-wallet"></i> CONNECT WALLET</button>
-                <button class="btn" onclick="loginGoogle()" style="background:white; color:#333; font-size:0.8rem; height:45px;">
-                    <img src="https://www.google.com/favicon.ico" width="16"> Continue with Google
+                <button class="btn btn-gold" onclick="loginGoogle()">
+                    <img src="https://www.google.com/favicon.ico" width="16"> Login with Google
+                </button>
+                <div style="text-align: center; font-size: 0.7rem; color: #444; margin: 10px 0;">OR</div>
+                <button class="btn" onclick="connectWallet()">
+                    <i class="fa-solid fa-wallet"></i> Connect Wallet
                 </button>
             </div>
             
-            <div id="logged-in-view" style="display: none; width: 100%; text-align: center;">
-                <div class="user-tag" id="user-id-tag">0x...</div>
-                <div id="user-mtype" class="status-badge">Checking Status...</div>
+            <div id="logged-in-view" style="display: none; text-align: center;">
+                <div id="user-display" style="font-weight: 700; margin-bottom: 5px;">User</div>
                 <button class="btn btn-discord" id="discord-link-btn" onclick="linkDiscord()">
-                    <i class="fa-brands fa-discord"></i> LINK DISCORD DM
+                    <i class="fa-brands fa-discord"></i> Link Discord for Alerts
                 </button>
-                <a href="javascript:logout()" style="color:#555; font-size:0.7rem; text-decoration:none; margin-top:10px; display:block;">Logout</a>
+                <a href="javascript:logout()" style="color:#444; font-size:0.7rem; text-decoration:none; display:block; margin-top:10px;">Logout</a>
             </div>
         </div>
 
         <div class="radar-panel">
-            <div id="pro-upgrade-area" class="pro-card" style="display: none;">
-                <div style="font-weight: 700; color: var(--gold); margin-bottom: 5px;">💎 UPGRADE TO PRO</div>
-                <div style="font-size: 0.7rem; color: #888; margin-bottom: 12px;">Real-time push & AI Score Analysis</div>
-                <button class="btn btn-gold" onclick="payForPro()" style="font-size: 0.8rem; height: 40px;">
-                    PAY 0.1 SOL TO UNLOCK
-                </button>
-            </div>
-
-            <div style="text-align: center; margin-bottom: 20px;">
-                <h2 style="margin:0; letter-spacing: 3px; font-weight: 300;">RADAR <span style="color:var(--gold)">V2.5</span></h2>
-            </div>
-
-            <label style="font-size: 0.7rem; color: #555;">MIN RUG-SCORE THRESHOLD</label>
+            <h2 style="text-align:center; margin:0 0 20px 0; letter-spacing: 2px;">BANANA <span style="color:var(--gold)">RADAR</span></h2>
+            
+            <label style="font-size: 0.7rem; color: #555;">SCANNER SENSITIVITY (RUG-SCORE)</label>
             <input type="number" id="score-input" value="300">
-            <button class="btn btn-gold" onclick="updateScore()">SYNC CONFIGURATION</button>
+            
+            <button class="btn btn-gold" onclick="updateScore()">SAVE SETTINGS</button>
             <div id="console"></div>
         </div>
     </div>
 
-    <div id="wallet-modal" class="modal">
-        <div class="modal-content">
-            <h3 style="text-align:center; margin-bottom:20px;">Connect Solana</h3>
-            <button class="btn" onclick="connectWallet('phantom')">
-                <img src="https://phantom.app/favicon.ico" width="20"> Phantom Wallet
-            </button>
-            <button class="btn" style="background:none; border:none; color:#555;" onclick="closeModal()">Close</button>
-        </div>
-    </div>
-
     <script>
-        // --- [核心配置] ---
         const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
-        const MY_RECEIVE_WALLET = "8G9T8ufSU1c2Zdqq59JNz1iZYRibNA4Qsk8N9qKPL7CJ";
-        
-        // 🚨 注意：这里必须填入真正的 Helius API Key (不是 Supabase Key)
-        const HELIUS_RPC = "https://mainnet.helius-rpc.com/?api-key=a59be4ac-6362-4c84-bf24-ff9da26e8861"; 
-        
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        let currentUser = { id: null };
+        let currentUserAddr = null;
 
-        const openModal = () => document.getElementById('wallet-modal').style.display = 'flex';
-        const closeModal = () => document.getElementById('wallet-modal').style.display = 'none';
-
-        function addLog(msg, isHit = false) {
-            const con = document.getElementById('console');
+        function addLog(msg) {
             const d = document.createElement('div');
-            if(isHit) d.className = 'log-hit';
-            d.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-            con.prepend(d);
+            d.innerText = `> ${msg}`;
+            document.getElementById('console').prepend(d);
         }
 
-        async function toggleUI(loggedIn, uid = "") {
-            document.getElementById('logged-out-view').style.display = loggedIn ? 'none' : 'flex';
+        async function toggleUI(loggedIn, info = "") {
+            document.getElementById('logged-out-view').style.display = loggedIn ? 'none' : 'block';
             document.getElementById('logged-in-view').style.display = loggedIn ? 'block' : 'none';
             if(loggedIn) {
-                document.getElementById('user-id-tag').innerText = uid.slice(0,6) + "..." + uid.slice(-4);
-                const { data } = await sb.from('whitelist').select('*').eq('wallet_address', uid).single();
-                const isPro = data?.member_type === 'pro';
-                const mBadge = document.getElementById('user-mtype');
-                mBadge.innerText = isPro ? "💎 PRO ACCESS" : "🐢 FREE ACCESS";
-                mBadge.style.color = isPro ? "var(--cyan)" : "var(--gold)";
-                document.getElementById('pro-upgrade-area').style.display = isPro ? 'none' : 'block';
+                document.getElementById('user-display').innerText = info.includes('@') ? info : info.slice(0,6)+'...'+info.slice(-4);
+                // 检查是否绑定 Discord
+                const { data } = await sb.from('whitelist').select('discord_id').eq('wallet_address', info).single();
                 if(data?.discord_id) {
-                    const dBtn = document.getElementById('discord-link-btn');
-                    dBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> DISCORD LINKED';
-                    dBtn.style.color = "#4ade80"; dBtn.onclick = null;
+                    const btn = document.getElementById('discord-link-btn');
+                    btn.innerHTML = '✅ DISCORD LINKED'; btn.style.color = '#4ade80'; btn.onclick = null;
                 }
             }
         }
@@ -128,52 +88,26 @@
             await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
         }
 
-        async function payForPro() {
-            try {
-                if (!window.solana?.isPhantom) return addLog("Phantom not found!");
-                addLog("Connecting to RPC...");
-                const connection = new solanaWeb3.Connection(HELIUS_RPC);
-                const fromPubkey = window.solana.publicKey;
-                const transaction = new solanaWeb3.Transaction().add(
-                    solanaWeb3.SystemProgram.transfer({
-                        fromPubkey: fromPubkey,
-                        toPubkey: new solanaWeb3.PublicKey(MY_RECEIVE_WALLET),
-                        lamports: 0.1 * solanaWeb3.LAMPORTS_PER_SOL,
-                    })
-                );
-                const { blockhash } = await connection.getLatestBlockhash();
-                transaction.recentBlockhash = blockhash;
-                transaction.feePayer = fromPubkey;
-                const { signature } = await window.solana.signAndSendTransaction(transaction);
-                addLog("✅ Sent! Sig: " + signature.slice(0,8), true);
-            } catch (e) { addLog("Payment Error: " + e.message); }
-        }
-
         async function connectWallet() {
-            closeModal();
-            try {
-                const resp = await window.solana.connect();
-                const addr = resp.publicKey.toString();
-                currentUser.id = addr;
-                localStorage.setItem('active_wallet', addr);
-                await sb.from('whitelist').upsert({ wallet_address: addr, last_seen: new Date().toISOString() }, { onConflict: 'wallet_address' });
-                toggleUI(true, addr);
-                addLog("Wallet connected.");
-            } catch (e) { addLog("Error: " + e.message); }
+            if (!window.solana) return addLog("Phantom not found");
+            const resp = await window.solana.connect();
+            const addr = resp.publicKey.toString();
+            localStorage.setItem('active_wallet', addr);
+            await sb.from('whitelist').upsert({ wallet_address: addr, last_seen: new Date().toISOString() });
+            toggleUI(true, addr);
         }
 
         async function updateScore() {
-            const activeId = currentUser.id || localStorage.getItem('active_wallet');
-            if(!activeId) return openModal();
+            const addr = localStorage.getItem('active_wallet');
+            if(!addr) return addLog("Please login first");
             const score = document.getElementById('score-input').value;
-            await sb.from('whitelist').update({ min_score: parseInt(score) }).eq('wallet_address', activeId);
-            addLog("Config synced: " + score, true);
+            await sb.from('whitelist').update({ min_score: parseInt(score) }).eq('wallet_address', addr);
+            addLog("Settings updated: " + score);
         }
 
         async function linkDiscord() {
-            const activeId = currentUser.id || localStorage.getItem('active_wallet');
-            if(!activeId) return openModal();
-            addLog("Linking Discord...");
+            const addr = localStorage.getItem('active_wallet');
+            if(!addr) return addLog("Connect wallet first!");
             await sb.auth.signInWithOAuth({ provider: 'discord', options: { redirectTo: window.location.origin } });
         }
 
@@ -182,11 +116,22 @@
         (async () => {
             const { data: { user } } = await sb.auth.getUser();
             const savedWallet = localStorage.getItem('active_wallet');
-            if (user && savedWallet) {
-                await sb.from('whitelist').update({ discord_id: user.user_metadata.sub }).eq('wallet_address', savedWallet);
+            
+            // 处理 Google/Discord 回调
+            if (user) {
+                const identity = user.email || user.user_metadata.full_name;
+                // 如果是 Google 登录，我们临时用 email 作为唯一标识存入 whitelist
+                if (!savedWallet) {
+                    localStorage.setItem('active_wallet', user.email);
+                    await sb.from('whitelist').upsert({ wallet_address: user.email, last_seen: new Date().toISOString() });
+                } else if (user.app_metadata.provider === 'discord') {
+                    // 如果是 Discord 绑定回调
+                    await sb.from('whitelist').update({ discord_id: user.user_metadata.sub }).eq('wallet_address', savedWallet);
+                }
+                toggleUI(true, localStorage.getItem('active_wallet'));
+            } else if (savedWallet) {
+                toggleUI(true, savedWallet);
             }
-            if (savedWallet) { currentUser.id = savedWallet; toggleUI(true, savedWallet); }
-            addLog("System Initialized.");
         })();
     </script>
 </body>
