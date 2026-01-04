@@ -1,68 +1,81 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyBanana AI | Alpha Radar</title>
+    <title>MyBanana AI | Alpha Radar Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍌</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        :root { --gold: #f1c40f; --bg: #080808; --card: rgba(20, 20, 20, 0.95); --border: #222; }
-        body { background: radial-gradient(circle at center, #151515 0%, #080808 100%); color: #fff; font-family: 'Space Grotesk', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 500px; padding: 60px 20px; z-index: 2; }
+        :root { --gold: #f1c40f; --cyan: #00f2ff; --bg: #080808; --card: rgba(18, 18, 18, 0.98); --border: #222; }
+        body { background: radial-gradient(circle at center, #111 0%, #080808 100%); color: #fff; font-family: 'Space Grotesk', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 480px; padding: 40px 20px; z-index: 2; }
         
-        /* 状态与导航 */
-        .nav { display: flex; flex-direction: column; align-items: center; gap: 20px; margin-bottom: 50px; }
-        .auth-group { display: flex; gap: 12px; justify-content: center; width: 100%; }
-        
-        /* 按钮体系 */
-        .btn { padding: 12px 24px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); color: #fff; cursor: pointer; transition: all 0.3s ease; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 10px; }
-        .btn:hover { border-color: var(--gold); background: rgba(241, 196, 15, 0.05); transform: translateY(-2px); }
-        .btn-gold { background: var(--gold); color: #000; font-weight: 700; border: none; width: 100%; justify-content: center; }
-        .btn-logout { border-color: #441111; color: #ff5555; font-size: 0.7rem; padding: 6px 12px; margin-top: 10px; opacity: 0.6; }
+        /* 导航与头像区域 */
+        .nav { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 40px; }
+        .user-tag { font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; }
+        .status-badge { font-size: 0.7rem; padding: 4px 12px; border-radius: 20px; background: #000; border: 1px solid var(--gold); color: var(--gold); text-transform: uppercase; margin-top: 5px; }
 
         /* 雷达面板 */
-        .radar-panel { background: var(--card); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: 24px; padding: 35px; border-top: 3px solid var(--gold); box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
-        input { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 18px; border-radius: 12px; font-size: 1.5rem; margin: 20px 0; outline: none; text-align: center; box-sizing: border-box; }
+        .radar-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 30px; border-top: 4px solid var(--gold); box-shadow: 0 25px 50px rgba(0,0,0,0.8); }
+        .pro-card { background: linear-gradient(135deg, rgba(241,196,15,0.1) 0%, rgba(0,0,0,0) 100%); border: 1px dashed var(--gold); border-radius: 16px; padding: 20px; margin-bottom: 25px; text-align: center; }
         
-        #console { background: rgba(0,0,0,0.8); border: 1px solid #111; border-radius: 12px; padding: 15px; height: 120px; overflow-y: auto; font-family: monospace; font-size: 0.7rem; color: #888; margin-top: 20px; line-height: 1.6; }
-        .log-hit { color: var(--gold); }
-        .status-badge { font-size: 0.65rem; padding: 4px 10px; border-radius: 5px; background: #1a1a1a; color: var(--gold); margin-top: 8px; border: 1px solid rgba(241,196,15,0.2); }
+        /* 表单与按钮 */
+        input { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 15px; border-radius: 12px; font-size: 1.2rem; margin: 15px 0; outline: none; text-align: center; box-sizing: border-box; font-family: monospace; }
+        .btn { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: #1a1a1a; color: #fff; cursor: pointer; transition: 0.3s; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px; }
+        .btn:hover { border-color: var(--gold); transform: translateY(-2px); }
+        .btn-gold { background: var(--gold); color: #000; border: none; }
+        .btn-discord { color: #5865F2; border-color: #5865F2; margin-top: 10px; }
+        
+        /* 日志控制台 */
+        #console { background: #000; border-radius: 12px; padding: 15px; height: 100px; overflow-y: auto; font-family: monospace; font-size: 0.75rem; color: #666; margin-top: 20px; border: 1px solid #111; }
+        .log-hit { color: var(--gold); font-weight: bold; }
 
-        /* 钱包弹窗 */
-        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; justify-content:center; align-items:center; backdrop-filter: blur(8px); }
-        .modal-content { background:#111; border:1px solid #333; border-radius:24px; width:90%; max-width:360px; padding:30px; position:relative; }
+        /* 弹窗 */
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:1000; justify-content:center; align-items:center; backdrop-filter: blur(10px); }
+        .modal-content { background:#111; border:1px solid #333; border-radius:24px; width:90%; max-width:340px; padding:30px; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="nav">
-            <div id="logged-out-view" class="auth-group">
-                <button class="btn" onclick="openModal()"><i class="fa-solid fa-wallet"></i> CONNECT</button>
-                <button class="btn" onclick="loginSocial('google')"><i class="fa-brands fa-google"></i></button>
+            <div id="logged-out-view">
+                <button class="btn btn-gold" onclick="openModal()"><i class="fa-solid fa-wallet"></i> CONNECT WALLET</button>
             </div>
             
-            <div id="logged-in-view" class="nav" style="display: none; width: 100%;">
-                <div id="user-display" style="text-align: center;">
-                    <div id="user-id-tag" style="font-size: 0.9rem; color: #fff; font-weight: 600;"></div>
-                    <div id="user-mtype" class="status-badge">FETCHING STATUS...</div>
-                </div>
-                <div class="auth-group">
-                    <button id="discord-link-btn" class="btn" style="color: var(--gold); border-color: var(--gold);" onclick="linkDiscord()">
-                        <i class="fa-brands fa-discord"></i> LINK NOTIFICATIONS
-                    </button>
-                </div>
-                <button class="btn btn-logout" onclick="logout()">DISCONNECT</button>
+            <div id="logged-in-view" style="display: none; width: 100%; text-align: center;">
+                <div class="user-tag" id="user-id-tag">0x00...0000</div>
+                <div id="user-mtype" class="status-badge">Checking Status...</div>
+                <button class="btn btn-discord" id="discord-link-btn" onclick="linkDiscord()">
+                    <i class="fa-brands fa-discord"></i> LINK DISCORD DM
+                </button>
+                <a href="javascript:logout()" style="color:#555; font-size:0.7rem; text-decoration:none; margin-top:10px; display:block;">Disconnect</a>
             </div>
         </div>
 
         <div class="radar-panel">
-            <h2 style="margin: 0; font-weight: 300; letter-spacing: 5px; text-align: center;">MYBANANA <span style="color:var(--gold)">AI</span></h2>
-            <p style="font-size: 0.65rem; color: #555; text-align: center; margin-top: 8px; font-weight: 700;">REAL-TIME ALPHA RADAR</p>
-            <input type="number" id="score-input" value="300" min="0" max="1000">
+            <div id="pro-upgrade-area" class="pro-card" style="display: none;">
+                <div style="font-weight: 700; color: var(--gold); margin-bottom: 5px;">🚀 UPGRADE TO PRO</div>
+                <div style="font-size: 0.75rem; color: #888; margin-bottom: 15px;">Instant push notifications & AI deep analysis</div>
+                <button class="btn btn-gold" onclick="payForPro()" style="font-size: 0.8rem; padding: 10px;">
+                    PAY 0.1 SOL TO UNLOCK
+                </button>
+            </div>
+
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="margin:0; letter-spacing: 3px; font-weight: 300;">RADAR <span style="color:var(--gold)">V2.5</span></h2>
+                <div style="font-size: 0.6rem; color: #444; font-weight: 700;">REAL-TIME SOLANA SCANNER</div>
+            </div>
+
+            <label style="font-size: 0.7rem; color: #666; margin-left: 5px;">MIN RUG-SCORE THRESHOLD</label>
+            <input type="number" id="score-input" value="300">
+            
             <button class="btn btn-gold" onclick="updateScore()">SYNC CONFIGURATION</button>
             <div id="console"></div>
         </div>
@@ -70,28 +83,22 @@
 
     <div id="wallet-modal" class="modal">
         <div class="modal-content">
-            <h3 style="margin:0 0 25px 0; text-align:center; font-weight: 300;">Select Provider</h3>
-            <div style="display:flex; flex-direction:column; gap:12px;">
-                <button class="btn" style="justify-content:space-between;" onclick="connectWallet('phantom')">
-                    <span><img src="https://phantom.app/favicon.ico" width="18" style="margin-right:10px;"> Phantom</span>
-                    <i class="fa-solid fa-chevron-right" style="font-size:0.6rem;"></i>
-                </button>
-                <button class="btn" style="justify-content:space-between;" onclick="connectWallet('metamask')">
-                    <span><img src="https://metamask.io/favicon.ico" width="18" style="margin-right:10px;"> MetaMask</span>
-                    <i class="fa-solid fa-chevron-right" style="font-size:0.6rem;"></i>
-                </button>
-            </div>
-            <button onclick="closeModal()" style="width:100%; margin-top:25px; background:none; border:none; color:#555; cursor:pointer; font-size:0.8rem;">Cancel</button>
+            <h3 style="text-align:center; margin-top:0;">Connect Solana</h3>
+            <button class="btn" onclick="connectWallet('phantom')">
+                <img src="https://phantom.app/favicon.ico" width="20"> Phantom
+            </button>
+            <button class="btn" style="background:none; border:none; color:#555;" onclick="closeModal()">Close</button>
         </div>
     </div>
 
     <script>
-        // --- 请务必替换为你自己的 KEY ---
+        // --- [配置区] ---
         const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
+        const MY_RECEIVE_WALLET = "8G9T8ufSU1c2Zdqq59JNz1iZYRibNA4Qsk8N9qKPL7CJ"; // 必须与后端一致
+        
         const sb = supabase.createClient(SB_URL, SB_KEY);
-
-        let currentUser = { id: null, method: null };
+        let currentUser = { id: null };
 
         const openModal = () => document.getElementById('wallet-modal').style.display = 'flex';
         const closeModal = () => document.getElementById('wallet-modal').style.display = 'none';
@@ -100,18 +107,29 @@
             const con = document.getElementById('console');
             const d = document.createElement('div');
             if(isHit) d.className = 'log-hit';
-            d.innerText = `[${new Date().toLocaleTimeString([], {hour12:false})}] ${msg}`;
+            d.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
             con.prepend(d);
         }
 
+        // --- [身份与 UI 控制] ---
         async function toggleUI(loggedIn, uid = "") {
-            document.getElementById('logged-out-view').style.display = loggedIn ? 'none' : 'flex';
-            document.getElementById('logged-in-view').style.display = loggedIn ? 'flex' : 'none';
+            document.getElementById('logged-out-view').style.display = loggedIn ? 'none' : 'block';
+            document.getElementById('logged-in-view').style.display = loggedIn ? 'block' : 'none';
+            
             if(loggedIn) {
                 document.getElementById('user-id-tag').innerText = uid.slice(0,6) + "..." + uid.slice(-4);
-                // 获取数据库状态
-                const { data } = await sb.from('whitelist').select('member_type, discord_id').eq('wallet_address', uid).single();
-                document.getElementById('user-mtype').innerText = (data?.member_type || 'FREE').toUpperCase() + " ACCESS";
+                
+                // 从数据库拉取最新状态
+                const { data } = await sb.from('whitelist').select('*').eq('wallet_address', uid).single();
+                const isPro = data?.member_type === 'pro';
+                
+                const mBadge = document.getElementById('user-mtype');
+                mBadge.innerText = isPro ? "💎 PRO ACCESS" : "🐢 FREE ACCESS";
+                mBadge.style.color = isPro ? "var(--cyan)" : "var(--gold)";
+                mBadge.style.borderColor = isPro ? "var(--cyan)" : "var(--gold)";
+                
+                document.getElementById('pro-upgrade-area').style.display = isPro ? 'none' : 'block';
+                
                 if(data?.discord_id) {
                     const dBtn = document.getElementById('discord-link-btn');
                     dBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i> DISCORD LINKED';
@@ -122,136 +140,98 @@
             }
         }
 
-        async function connectWallet(type) {
-    try {
-        let addr = "";
-        if (type === 'phantom') {
-            if (!window.solana) {
-                addLog("Phantom not found!");
-                return window.open("https://phantom.app/", "_blank");
-            }
-            const resp = await window.solana.connect();
-            addr = resp.publicKey.toString();
-        } else if (type === 'metamask') {
-            if (!window.ethereum) {
-                addLog("MetaMask not found!");
-                return window.open("https://metamask.io/", "_blank");
-            }
-            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-            addr = accounts[0];
-        }
-        
-        if(addr) {
-            currentUser = { id: addr, method: 'wallet' };
-            localStorage.setItem('active_wallet', addr);
-            
-            // 确保数据库里有这一行
-            await sb.from('whitelist').upsert({ 
-                wallet_address: addr, 
-                auth_method: 'wallet', 
-                last_seen: new Date().toISOString() 
-            }, { onConflict: 'wallet_address' });
-            
-            toggleUI(true, addr);
-            addLog("Connected: " + addr.slice(0,6), true);
-            closeModal(); // 成功后再关闭
-        }
-    } catch (e) { 
-        addLog("Error: " + e.message);
-        // 不要关弹窗，让用户看清楚报错或重试
-    }
-}
+        // --- [核心功能：支付升级] ---
+        async function payForPro() {
+            try {
+                if (!window.solana?.isPhantom) {
+                    addLog("Phantom not found!");
+                    return window.open("https://phantom.app/", "_blank");
+                }
+                
+                addLog("Initiating transaction...");
+                const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'));
+                const fromPubkey = window.solana.publicKey;
+                const toPubkey = new solanaWeb3.PublicKey(MY_RECEIVE_WALLET);
 
-        async function loginSocial(provider) {
-            await sb.auth.signInWithOAuth({ provider, options: { redirectTo: window.location.origin } });
+                const transaction = new solanaWeb3.Transaction().add(
+                    solanaWeb3.SystemProgram.transfer({
+                        fromPubkey: fromPubkey,
+                        toPubkey: toPubkey,
+                        lamports: 0.1 * solanaWeb3.LAMPORTS_PER_SOL,
+                    })
+                );
+
+                const { blockhash } = await connection.getLatestBlockhash();
+                transaction.recentBlockhash = blockhash;
+                transaction.feePayer = fromPubkey;
+
+                const { signature } = await window.solana.signAndSendTransaction(transaction);
+                addLog("✅ Payment Sent! Sig: " + signature.slice(0,8), true);
+                addLog("Engine will auto-upgrade in 30s.");
+            } catch (e) {
+                addLog("Payment failed: " + e.message);
+            }
+        }
+
+        // --- [其他操作] ---
+        async function connectWallet(type) {
+            closeModal();
+            try {
+                const resp = await window.solana.connect();
+                const addr = resp.publicKey.toString();
+                currentUser.id = addr;
+                localStorage.setItem('active_wallet', addr);
+                
+                await sb.from('whitelist').upsert({ 
+                    wallet_address: addr, 
+                    last_seen: new Date().toISOString() 
+                }, { onConflict: 'wallet_address' });
+                
+                toggleUI(true, addr);
+                addLog("Wallet connected.", true);
+            } catch (e) { addLog("Connect Error: " + e.message); }
         }
 
         async function updateScore() {
-    // 强制尝试从 localStorage 找回钱包地址
-    const activeId = currentUser.id || localStorage.getItem('active_wallet');
-    
-    if(!activeId) {
-        addLog("Identity not found. Reconnecting...");
-        return openModal();
-    }
-    
-    const scoreInput = document.getElementById('score-input');
-    const scoreValue = parseInt(scoreInput.value);
-    
-    addLog(`Syncing threshold ${scoreValue} for ${activeId.slice(0,6)}...`);
-
-    const { error } = await sb.from('whitelist')
-        .update({ 
-            min_score: scoreValue, 
-            last_seen: new Date().toISOString() 
-        })
-        .eq('wallet_address', activeId);
-
-    if(!error) {
-        addLog("✅ Configuration saved!", true);
-    } else {
-        addLog("❌ Sync Error: " + error.message);
-        // 如果这里报错，请检查 Supabase 对应表的 RLS Policy 是否开启了 UPDATE 权限
-    }
-}
-
-
-        async function linkDiscord() {
-            // 确保跳转前钱包地址在存储中
-            if(!currentUser.id) return alert("Please connect wallet first!");
-            addLog("Redirecting to Discord...");
-            await sb.auth.signInWithOAuth({ 
-                provider: 'discord', 
-                options: { redirectTo: window.location.origin } 
-            });
+            const activeId = currentUser.id || localStorage.getItem('active_wallet');
+            if(!activeId) return openModal();
+            
+            const score = document.getElementById('score-input').value;
+            const { error } = await sb.from('whitelist').update({ min_score: parseInt(score) }).eq('wallet_address', activeId);
+            if(!error) addLog("Sync Success: " + score, true);
         }
 
-        async function logout() {
-            await sb.auth.signOut();
+        async function linkDiscord() {
+            const activeId = currentUser.id || localStorage.getItem('active_wallet');
+            if(!activeId) return openModal();
+            addLog("Redirecting to Discord...");
+            await sb.auth.signInWithOAuth({ provider: 'discord', options: { redirectTo: window.location.origin } });
+        }
+
+        function logout() {
             localStorage.removeItem('active_wallet');
             location.reload();
         }
 
-        // 初始化/授权回调处理
+        // --- [初始化：处理回调与重连] ---
         (async () => {
-             // 强制等待 1 秒，让 Supabase 处理完 URL 中的 Access Token
-    await new Promise(r => setTimeout(r, 1000)); 
-    
-    const { data: { session } } = await sb.auth.getSession();
-    const user = session?.user;
-    const savedWallet = localStorage.getItem('active_wallet');
-
-    if (user) {
-        addLog(`System Auth Detected: ${user.app_metadata.provider}`);
-
-        // 核心修复：无论 provider 是什么，只要是绑定流程且有钱包地址
-        if (savedWallet) {
-            // 尝试从不同的 metadata 字段提取 Discord ID
-            const discordId = user.user_metadata.sub || user.app_metadata.provider_id || user.id;
+            await new Promise(r => setTimeout(r, 800)); // 等待 OAuth 解析
+            const { data: { user } } = await sb.auth.getUser();
+            const savedWallet = localStorage.getItem('active_wallet');
             
-            addLog("Executing Force Link to: " + savedWallet.slice(0,6));
-
-            // 使用 upsert 确保即使行不存在也能创建，存在则更新
-            const { error } = await sb.from('whitelist').upsert({
-                wallet_address: savedWallet,
-                discord_id: discordId,
-                auth_method: 'mixed',
-                last_seen: new Date().toISOString()
-            }, { onConflict: 'wallet_address' });
-
-            if (!error) {
-                addLog("✅ Discord Bound: " + discordId, true);
-            } else {
-                addLog("❌ Update Failed: " + error.message);
-                // 打印错误到控制台方便截图
-                console.error("Supabase Error:", error);
+            if (user && savedWallet) {
+                // 如果是 Discord 回调
+                const discordId = user.user_metadata.sub;
+                await sb.from('whitelist').update({ discord_id: discordId }).eq('wallet_address', savedWallet);
+                addLog("Discord binding finalized.", true);
             }
-        }
-        toggleUI(true, savedWallet || user.id);
-    } else if (savedWallet) {
-        toggleUI(true, savedWallet);
-    }
-})();
+            
+            if (savedWallet) {
+                currentUser.id = savedWallet;
+                toggleUI(true, savedWallet);
+            }
+            addLog("System Ready.");
+        })();
     </script>
 </body>
 </html>
