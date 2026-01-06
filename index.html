@@ -1,100 +1,144 @@
+WEB1.0
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banana Radar | Alpha</title>
+    <title>Banana Radar v1.0 | Stable</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --gold: #f1c40f; --bg: #0a0a0a; --card: #141414; --border: #222; --green: #4ade80; }
-        body { background: var(--bg); color: #fff; font-family: 'Space Grotesk', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; }
-        .container { width: 100%; max-width: 420px; padding: 40px 15px; box-sizing: border-box; }
-        .radar-panel { background: var(--card); border: 1px solid var(--border); border-radius: 32px; padding: 25px; text-align: center; box-shadow: 0 30px 60px rgba(0,0,0,0.8); }
-        .btn { width: 100%; padding: 16px; border-radius: 16px; border: none; font-weight: 700; cursor: pointer; transition: 0.3s; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.9rem; text-decoration: none; }
-        .btn-gold { background: var(--gold); color: #000; }
-        .signal-card { background: #000; border: 1px solid #1a1a1a; border-radius: 20px; padding: 18px; margin-bottom: 15px; text-align: left; position: relative; border-left: 4px solid var(--border); transition: 0.3s; }
-        .signal-card:hover { border-left-color: var(--gold); transform: scale(1.02); }
-        .score-box { color: var(--gold); font-size: 1.4rem; font-weight: 700; }
-        .holder-tag { font-size: 0.6rem; background: #111; padding: 3px 8px; border-radius: 6px; color: var(--green); margin-right: 5px; border: 1px solid #222; }
-        .narrative-box { font-size: 0.75rem; color: #777; margin: 12px 0; border-left: 2px solid #222; padding-left: 10px; font-style: italic; }
-        #timer { font-family: monospace; color: var(--gold); font-size: 0.65rem; }
+        :root { --gold: #f1c40f; --bg: #050505; --card: #111; --border: #222; --text-dim: #666; }
+        body { background: var(--bg); color: #fff; font-family: 'Space Grotesk', sans-serif; margin: 0; display: flex; justify-content: center; overflow-y: scroll; }
+        .container { width: 100%; max-width: 440px; padding: 20px; box-sizing: border-box; }
+        
+        /* 顶部导航 */
+        .header { text-align: center; margin-bottom: 25px; padding-top: 10px; }
+        .header h2 { letter-spacing: 6px; margin: 0; font-size: 1.5rem; }
+        #status-bar { font-size: 0.65rem; color: var(--text-dim); margin-top: 8px; display: flex; justify-content: center; gap: 15px; }
+        .live-dot { height: 6px; width: 6px; background-color: #4ade80; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; }
+
+        /* 信号卡片 */
+        .signal-card { 
+            background: var(--card); border: 1px solid var(--border); border-radius: 24px; 
+            padding: 20px; margin-bottom: 18px; position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .signal-card:active { transform: scale(0.98); }
+        .high-score { border-color: var(--gold); background: linear-gradient(145deg, #111 0%, #1a1705 100%); }
+        
+        .score { position: absolute; top: 22px; right: 22px; font-size: 1.6rem; font-weight: 700; color: var(--gold); }
+        .symbol { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .ca-hint { font-size: 0.5rem; color: var(--text-dim); font-weight: 300; margin-left: 4px; }
+
+        .tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .tag { font-size: 0.6rem; padding: 3px 10px; border-radius: 8px; border: 1px solid #333; color: var(--text-dim); text-transform: uppercase; }
+        .tag-smart { color: var(--gold); border-color: var(--gold); background: rgba(241, 196, 15, 0.05); }
+
+        .narrative { font-size: 0.8rem; color: #ccc; margin: 15px 0; line-height: 1.5; border-left: 3px solid #222; padding-left: 12px; font-style: italic; }
+        
+        .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #1a1a1a; }
+        .btn-trade { background: #fff; color: #000; text-decoration: none; padding: 8px 18px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; transition: 0.2s; }
+        .btn-trade:hover { background: var(--gold); }
+        .meta-info { font-size: 0.65rem; color: var(--text-dim); display: flex; flex-direction: column; gap: 2px; }
+
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        
+        /* 复制提醒气泡 */
+        #toast { visibility: hidden; min-width: 150px; background-color: var(--gold); color: #000; text-align: center; border-radius: 10px; padding: 10px; position: fixed; z-index: 100; bottom: 30px; font-size: 0.8rem; font-weight: 700; }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 1.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
     </style>
 </head>
 <body>
+    <div id="toast">CA COPIED!</div>
     <div class="container">
-        <div class="radar-panel">
-            <h1 style="letter-spacing: 4px; margin-bottom: 0;">BANANA <span style="color:var(--gold)">RADAR</span></h1>
-            <p style="font-size: 0.6rem; color: #444; margin-bottom: 30px;">V1.0 ALPHA ACTIVE</p>
-
-            <div id="logged-out-view">
-                <button class="btn btn-gold" onclick="login('google')"><i class="fa-brands fa-google"></i> GOOGLE LOGIN</button>
+        <div class="header">
+            <h2>BANANA <span style="color:var(--gold)">RADAR</span></h2>
+            <div id="status-bar">
+                <span><span class="live-dot"></span> LIVE FEED</span>
+                <span id="update-timer">REFRESHING...</span>
             </div>
-
-            <div id="logged-in-view" style="display:none;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <span id="user-info" style="font-size:0.75rem; font-weight:700; color:var(--gold);"></span>
-                    <span id="timer">NEXT SCAN: 10s</span>
-                </div>
-                <div id="signal-list"></div>
-                <button onclick="logout()" style="background:none; border:none; color:#333; font-size:0.6rem; cursor:pointer; margin-top:20px;">TERMINATE SESSION</button>
-            </div>
+        </div>
+        <div id="signal-list">
+            <p style="text-align:center; color:#333; font-size:0.8rem; margin-top:50px;">AWAITING ALPHA SIGNALS...</p>
         </div>
     </div>
 
     <script>
-       const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
+        const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
         const sb = supabase.createClient(SB_URL, SB_KEY);
-        let count = 10;
 
-        async function fetchSignals() {
-            const { data } = await sb.from('pending_pool').select('*').eq('status','passed').order('banana_score',{ascending:false}).limit(5);
-            const list = document.getElementById('signal-list');
-            list.innerHTML = '';
-            data?.forEach((item, i) => {
-                const holders = item.top_holders || [];
-                const tags = holders.filter(h => h.tag === 'SMART').map(() => `<span class="holder-tag"><i class="fa-solid fa-brain"></i> SMART</span>`).slice(0,2).join('');
-                list.innerHTML += `
-                    <div class="signal-card">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <div>
-                                <div style="color:var(--gold); font-weight:700; font-size:1.1rem;">$${item.symbol}</div>
-                                <div style="display:flex; margin-top:5px;">${tags || '<span class="holder-tag" style="color:#555">WHALE ONLY</span>'}</div>
-                            </div>
-                            <div class="score-box">${item.banana_score.toFixed(2)}</div>
-                        </div>
-                        <div class="narrative-box">"${item.narrative_log}"</div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
-                            <a href="https://dexscreener.com/solana/${item.ca}" target="_blank" style="color:#fff; font-size:0.6rem; text-decoration:none; background:#222; padding:5px 12px; border-radius:8px;">TRADE</a>
-                            <span style="color:#333; font-size:0.55rem;">LIQ: $${Math.round(item.liq).toLocaleString()}</span>
-                        </div>
-                    </div>`;
-            });
-            count = 10;
+        // 工具函数：计算时间差
+        function getTimeAgo(dateString) {
+            const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
+            if (seconds < 60) return `${seconds}s ago`;
+            return `${Math.floor(seconds / 60)}m ago`;
         }
 
-        setInterval(() => {
-            if(document.getElementById('logged-in-view').style.display === 'block') {
-                count--; document.getElementById('timer').innerText = `NEXT SCAN: ${count}s`;
-                if(count <= 0) fetchSignals();
-            }
-        }, 1000);
+        // 核心函数：复制 CA
+        function copyCA(ca) {
+            navigator.clipboard.writeText(ca);
+            const toast = document.getElementById("toast");
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2000);
+        }
 
-        async function login(p) { await sb.auth.signInWithOAuth({ provider: p, options: { redirectTo: window.location.origin } }); }
-        async function logout() { await sb.auth.signOut(); location.reload(); }
+        async function loadSignals() {
+            const { data, error } = await sb.from('pending_pool')
+                .select('*')
+                .eq('status', 'passed')
+                .order('banana_score', { ascending: false })
+                .limit(10);
 
-        (async () => {
-            const { data: { session } } = await sb.auth.getSession();
-            if(session?.user) {
-                document.getElementById('logged-out-view').style.display = 'none';
-                document.getElementById('logged-in-view').style.display = 'block';
-                document.getElementById('user-info').innerText = (session.user.user_metadata.full_name || session.user.email).toUpperCase();
-                fetchSignals();
+            if (error) { console.error(error); return; }
+
+            const list = document.getElementById('signal-list');
+            if (!data || data.length === 0) {
+                list.innerHTML = `<p style="text-align:center; color:#333; font-size:0.8rem; margin-top:50px;">NO QUALIFIED TOKENS YET</p>`;
+                return;
             }
-        })();
+
+            list.innerHTML = data.map(item => {
+                const isHigh = item.banana_score > 85;
+                const holders = item.top_holders || [];
+                const smartCount = item.smart_money_count || 0;
+                
+                return `
+                    <div class="signal-card ${isHigh ? 'high-score' : ''}">
+                        <div class="score">${item.banana_score.toFixed(2)}</div>
+                        <div class="symbol" onclick="copyCA('${item.ca}')">
+                            ${smartCount >= 1 ? '<i class="fa-solid fa-bolt" style="color:var(--gold)"></i>' : '<i class="fa-solid fa-seedling" style="color:#444"></i>'}
+                            $${item.symbol}
+                            <span class="ca-hint"><i class="fa-regular fa-copy"></i></span>
+                        </div>
+                        <div class="tags">
+                            ${holders.slice(0, 3).map(h => `
+                                <span class="tag ${h.tag === 'SMART' ? 'tag-smart' : ''}">
+                                    ${h.tag === 'SMART' ? '<i class="fa-solid fa-brain"></i>' : ''} ${h.tag}
+                                </span>
+                            `).join('')}
+                        </div>
+                        <div class="narrative">"${item.narrative_log || 'No AI analysis available.'}"</div>
+                        <div class="footer">
+                            <div class="meta-info">
+                                <span style="color:#888; font-weight:700;">LIQ: $${Math.round(item.liq).toLocaleString()}</span>
+                                <span>${getTimeAgo(item.created_at)}</span>
+                            </div>
+                            <a href="https://dexscreener.com/solana/${item.ca}" target="_blank" class="btn-trade">VIEW CHART</a>
+                        </div>
+                    </div>`;
+            }).join('');
+            
+            document.getElementById('update-timer').innerText = `UPDATED AT ${new Date().toLocaleTimeString()}`;
+        }
+
+        // 初始化加载与定时轮询
+        loadSignals();
+        setInterval(loadSignals, 10000); // 10秒刷新一次
     </script>
 </body>
 </html>
