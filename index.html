@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,16 +13,12 @@
         body { background: var(--bg); color: #fff; font-family: 'Space Grotesk', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; }
         .container { width: 100%; max-width: 420px; padding: 40px 15px; box-sizing: border-box; }
         .radar-panel { background: var(--card); border: 1px solid var(--border); border-radius: 32px; padding: 25px; text-align: center; box-shadow: 0 30px 60px rgba(0,0,0,0.8); }
-        .btn { width: 100%; padding: 16px; border-radius: 16px; border: none; font-weight: 700; cursor: pointer; transition: 0.3s; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn { width: 100%; padding: 16px; border-radius: 16px; border: none; font-weight: 700; cursor: pointer; transition: 0.3s; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.9rem; text-decoration: none; }
         .btn-gold { background: var(--gold); color: #000; }
-        .btn-discord { background: #5865F2; color: #fff; }
-        
-        /* 信号卡片升级 */
         .signal-card { background: #000; border: 1px solid #1a1a1a; border-radius: 20px; padding: 18px; margin-bottom: 15px; text-align: left; position: relative; border-left: 4px solid var(--border); transition: 0.3s; }
         .signal-card:hover { border-left-color: var(--gold); transform: scale(1.02); }
-        .rank-num { position: absolute; right: 15px; top: 15px; font-size: 0.7rem; color: #333; font-weight: 800; }
         .score-box { color: var(--gold); font-size: 1.4rem; font-weight: 700; }
-        .holder-tag { font-size: 0.55rem; background: #111; padding: 2px 6px; border-radius: 4px; color: var(--green); margin-right: 5px; border: 1px solid #222; }
+        .holder-tag { font-size: 0.6rem; background: #111; padding: 3px 8px; border-radius: 6px; color: var(--green); margin-right: 5px; border: 1px solid #222; }
         .narrative-box { font-size: 0.75rem; color: #777; margin: 12px 0; border-left: 2px solid #222; padding-left: 10px; font-style: italic; }
         #timer { font-family: monospace; color: var(--gold); font-size: 0.65rem; }
     </style>
@@ -30,26 +27,25 @@
     <div class="container">
         <div class="radar-panel">
             <h1 style="letter-spacing: 4px; margin-bottom: 0;">BANANA <span style="color:var(--gold)">RADAR</span></h1>
-            <p style="font-size: 0.6rem; color: #444; margin-bottom: 30px;">V3.5 WHALE-TRACKER ACTIVE</p>
+            <p style="font-size: 0.6rem; color: #444; margin-bottom: 30px;">V1.0 ALPHA ACTIVE</p>
 
             <div id="logged-out-view">
                 <button class="btn btn-gold" onclick="login('google')"><i class="fa-brands fa-google"></i> GOOGLE LOGIN</button>
-                <button class="btn btn-discord" onclick="login('discord')"><i class="fa-brands fa-discord"></i> DISCORD LOGIN</button>
             </div>
 
             <div id="logged-in-view" style="display:none;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <span id="user-info" style="font-size:0.75rem; font-weight:700; color:var(--gold);"></span>
-                    <span id="timer">SCANNING...</span>
+                    <span id="timer">NEXT SCAN: 10s</span>
                 </div>
                 <div id="signal-list"></div>
-                <button onclick="logout()" style="background:none; border:none; color:#222; font-size:0.6rem; margin-top:20px; cursor:pointer;">TERMINATE SESSION</button>
+                <button onclick="logout()" style="background:none; border:none; color:#333; font-size:0.6rem; cursor:pointer; margin-top:20px;">TERMINATE SESSION</button>
             </div>
         </div>
     </div>
 
     <script>
-        const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
+       const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
         const sb = supabase.createClient(SB_URL, SB_KEY);
         let count = 10;
@@ -59,16 +55,16 @@
             const list = document.getElementById('signal-list');
             list.innerHTML = '';
             data?.forEach((item, i) => {
-                const holderTags = (item.top_holders || []).filter(h => h.tag === 'SMART').map(() => `<span class="holder-tag">SMART</span>`).join('');
+                const holders = item.top_holders || [];
+                const tags = holders.filter(h => h.tag === 'SMART').map(() => `<span class="holder-tag"><i class="fa-solid fa-brain"></i> SMART</span>`).slice(0,2).join('');
                 list.innerHTML += `
                     <div class="signal-card">
-                        <div class="rank-num">TOP ${i+1}</div>
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div>
                                 <div style="color:var(--gold); font-weight:700; font-size:1.1rem;">$${item.symbol}</div>
-                                <div style="display:flex; margin-top:4px;">${holderTags}</div>
+                                <div style="display:flex; margin-top:5px;">${tags || '<span class="holder-tag" style="color:#555">WHALE ONLY</span>'}</div>
                             </div>
-                            <div class="score-box">${Math.floor(item.banana_score)}</div>
+                            <div class="score-box">${item.banana_score.toFixed(2)}</div>
                         </div>
                         <div class="narrative-box">"${item.narrative_log}"</div>
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
@@ -91,11 +87,11 @@
         async function logout() { await sb.auth.signOut(); location.reload(); }
 
         (async () => {
-            const { data: { user } } = await sb.auth.getUser();
-            if(user) {
+            const { data: { session } } = await sb.auth.getSession();
+            if(session?.user) {
                 document.getElementById('logged-out-view').style.display = 'none';
                 document.getElementById('logged-in-view').style.display = 'block';
-                document.getElementById('user-info').innerText = (user.user_metadata.full_name || user.email).toUpperCase();
+                document.getElementById('user-info').innerText = (session.user.user_metadata.full_name || session.user.email).toUpperCase();
                 fetchSignals();
             }
         })();
