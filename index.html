@@ -4,66 +4,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banana Radar v1.0 | Stable</title>
+    <title>Banana Radar v1.1 | Official Alpha</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --gold: #f1c40f; --bg: #050505; --card: #111; --border: #222; --text-dim: #666; }
-        body { background: var(--bg); color: #fff; font-family: 'Space Grotesk', sans-serif; margin: 0; display: flex; justify-content: center; overflow-y: scroll; }
-        .container { width: 100%; max-width: 440px; padding: 20px; box-sizing: border-box; }
+        :root { --gold: #f1c40f; --bg: #000; --card: #0d0d0d; --border: #1a1a1a; --text: #888; }
+        body { background: var(--bg); color: #fff; font-family: 'Space Grotesk', sans-serif; margin: 0; }
         
-        /* 顶部导航 */
-        .header { text-align: center; margin-bottom: 25px; padding-top: 10px; }
-        .header h2 { letter-spacing: 6px; margin: 0; font-size: 1.5rem; }
-        #status-bar { font-size: 0.65rem; color: var(--text-dim); margin-top: 8px; display: flex; justify-content: center; gap: 15px; }
-        .live-dot { height: 6px; width: 6px; background-color: #4ade80; border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; }
+        /* 导航栏 */
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+        .logo { font-weight: 700; letter-spacing: 4px; font-size: 1.2rem; }
+        .user-zone { display: flex; align-items: center; gap: 15px; }
+        .btn-auth { background: transparent; border: 1px solid var(--gold); color: var(--gold); padding: 6px 16px; border-radius: 8px; font-size: 0.75rem; cursor: pointer; font-weight: 700; }
+
+        .container { max-width: 480px; margin: 0 auto; padding: 20px; }
+        .section-title { font-size: 0.7rem; color: var(--text); letter-spacing: 2px; margin: 20px 0 15px 5px; display: flex; align-items: center; gap: 8px; }
+        .live-dot { height: 6px; width: 6px; background: #4ade80; border-radius: 50%; animation: pulse 1.5s infinite; }
 
         /* 信号卡片 */
-        .signal-card { 
-            background: var(--card); border: 1px solid var(--border); border-radius: 24px; 
-            padding: 20px; margin-bottom: 18px; position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .signal-card:active { transform: scale(0.98); }
-        .high-score { border-color: var(--gold); background: linear-gradient(145deg, #111 0%, #1a1705 100%); }
-        
+        .signal-card { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 22px; margin-bottom: 18px; position: relative; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .high-score { border-color: rgba(241,196,15,0.4); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .score { position: absolute; top: 22px; right: 22px; font-size: 1.6rem; font-weight: 700; color: var(--gold); }
-        .symbol { font-size: 1.2rem; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .ca-hint { font-size: 0.5rem; color: var(--text-dim); font-weight: 300; margin-left: 4px; }
-
-        .tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
-        .tag { font-size: 0.6rem; padding: 3px 10px; border-radius: 8px; border: 1px solid #333; color: var(--text-dim); text-transform: uppercase; }
-        .tag-smart { color: var(--gold); border-color: var(--gold); background: rgba(241, 196, 15, 0.05); }
-
-        .narrative { font-size: 0.8rem; color: #ccc; margin: 15px 0; line-height: 1.5; border-left: 3px solid #222; padding-left: 12px; font-style: italic; }
         
-        .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #1a1a1a; }
-        .btn-trade { background: #fff; color: #000; text-decoration: none; padding: 8px 18px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; transition: 0.2s; }
-        .btn-trade:hover { background: var(--gold); }
-        .meta-info { font-size: 0.65rem; color: var(--text-dim); display: flex; flex-direction: column; gap: 2px; }
-
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        .symbol { font-size: 1.3rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        .symbol:hover { color: var(--gold); }
         
-        /* 复制提醒气泡 */
-        #toast { visibility: hidden; min-width: 150px; background-color: var(--gold); color: #000; text-align: center; border-radius: 10px; padding: 10px; position: fixed; z-index: 100; bottom: 30px; font-size: 0.8rem; font-weight: 700; }
-        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 1.5s; }
-        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
-        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+        .tags { margin: 12px 0; display: flex; flex-wrap: wrap; gap: 6px; }
+        .tag { font-size: 0.6rem; padding: 3px 10px; border-radius: 6px; border: 1px solid #222; color: #555; font-weight: 700; }
+        .tag-smart { color: var(--gold); border-color: var(--gold); background: rgba(241,196,15,0.05); }
+
+        .narrative { font-size: 0.8rem; color: #bbb; line-height: 1.5; margin: 15px 0; border-left: 2px solid #222; padding-left: 12px; font-style: italic; }
+        
+        .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid #151515; }
+        .meta { font-size: 0.65rem; color: #444; }
+        .btn-dex { background: #fff; color: #000; text-decoration: none; padding: 8px 18px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        #toast { visibility: hidden; position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: var(--gold); color: #000; padding: 10px 20px; border-radius: 10px; font-weight: 700; z-index: 1000; font-size: 0.8rem; }
+        #toast.show { visibility: visible; animation: fadeInUp 0.3s, fadeOutDown 0.3s 1.7s; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
     </style>
 </head>
 <body>
-    <div id="toast">CA COPIED!</div>
+
+    <div id="toast">CONTRACT COPIED</div>
+
+    <nav class="navbar">
+        <div class="logo">BANANA <span style="color:var(--gold)">RADAR</span></div>
+        <div class="user-zone" id="user-zone">
+            <button class="btn-auth" onclick="login()">LOGIN</button>
+        </div>
+    </nav>
+
     <div class="container">
-        <div class="header">
-            <h2>BANANA <span style="color:var(--gold)">RADAR</span></h2>
-            <div id="status-bar">
-                <span><span class="live-dot"></span> LIVE FEED</span>
-                <span id="update-timer">REFRESHING...</span>
-            </div>
-        </div>
+        <div class="section-title"><span class="live-dot"></span> LIVE ALPHA FEED</div>
         <div id="signal-list">
-            <p style="text-align:center; color:#333; font-size:0.8rem; margin-top:50px;">AWAITING ALPHA SIGNALS...</p>
-        </div>
+            </div>
     </div>
 
     <script>
@@ -71,73 +68,66 @@
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
         const sb = supabase.createClient(SB_URL, SB_KEY);
 
-        // 工具函数：计算时间差
-        function getTimeAgo(dateString) {
-            const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
-            if (seconds < 60) return `${seconds}s ago`;
-            return `${Math.floor(seconds / 60)}m ago`;
+        // --- Auth 逻辑 ---
+        async function login() {
+            const email = prompt("Enter your email for Magic Link:");
+            if (email) await sb.auth.signInWithOtp({ email });
         }
 
-        // 核心函数：复制 CA
+        sb.auth.onAuthStateChange((event, session) => {
+            const zone = document.getElementById('user-zone');
+            if (session) {
+                zone.innerHTML = `<span style="font-size:0.7rem; color:var(--gold)">${session.user.email.split('@')[0].toUpperCase()}</span>
+                                  <button onclick="sb.auth.signOut()" style="background:none; border:none; color:#444; cursor:pointer; font-size:0.6rem;">LOGOUT</button>`;
+            }
+        });
+
+        // --- 数据渲染逻辑 ---
         function copyCA(ca) {
             navigator.clipboard.writeText(ca);
-            const toast = document.getElementById("toast");
-            toast.className = "show";
-            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2000);
+            const t = document.getElementById('toast');
+            t.className = "show";
+            setTimeout(() => { t.className = ""; }, 2000);
         }
 
-        async function loadSignals() {
-            const { data, error } = await sb.from('pending_pool')
+        async function fetchSignals() {
+            const { data } = await sb.from('pending_pool')
                 .select('*')
                 .eq('status', 'passed')
-                .order('banana_score', { ascending: false })
-                .limit(10);
-
-            if (error) { console.error(error); return; }
+                .order('created_at', { ascending: false }) // 按新鲜度排
+                .limit(15);
 
             const list = document.getElementById('signal-list');
-            if (!data || data.length === 0) {
-                list.innerHTML = `<p style="text-align:center; color:#333; font-size:0.8rem; margin-top:50px;">NO QUALIFIED TOKENS YET</p>`;
-                return;
-            }
+            if (!data) return;
 
             list.innerHTML = data.map(item => {
-                const isHigh = item.banana_score > 85;
+                const smart = item.smart_money_count || 0;
                 const holders = item.top_holders || [];
-                const smartCount = item.smart_money_count || 0;
-                
                 return `
-                    <div class="signal-card ${isHigh ? 'high-score' : ''}">
+                    <div class="signal-card ${item.banana_score > 80 ? 'high-score' : ''}">
                         <div class="score">${item.banana_score.toFixed(2)}</div>
                         <div class="symbol" onclick="copyCA('${item.ca}')">
-                            ${smartCount >= 1 ? '<i class="fa-solid fa-bolt" style="color:var(--gold)"></i>' : '<i class="fa-solid fa-seedling" style="color:#444"></i>'}
+                            ${smart > 0 ? '<i class="fa-solid fa-bolt" style="color:var(--gold)"></i>' : '<i class="fa-solid fa-ghost"></i>'}
                             $${item.symbol}
-                            <span class="ca-hint"><i class="fa-regular fa-copy"></i></span>
                         </div>
                         <div class="tags">
-                            ${holders.slice(0, 3).map(h => `
-                                <span class="tag ${h.tag === 'SMART' ? 'tag-smart' : ''}">
-                                    ${h.tag === 'SMART' ? '<i class="fa-solid fa-brain"></i>' : ''} ${h.tag}
-                                </span>
-                            `).join('')}
+                            ${holders.slice(0, 3).map(h => `<span class="tag ${h.tag === 'SMART' ? 'tag-smart' : ''}">${h.tag}</span>`).join('')}
                         </div>
-                        <div class="narrative">"${item.narrative_log || 'No AI analysis available.'}"</div>
+                        <div class="narrative">"${item.narrative_log || 'Analyzing narrative potential...'}"</div>
                         <div class="footer">
-                            <div class="meta-info">
-                                <span style="color:#888; font-weight:700;">LIQ: $${Math.round(item.liq).toLocaleString()}</span>
-                                <span>${getTimeAgo(item.created_at)}</span>
+                            <div class="meta">
+                                <div style="font-weight:700; color:#888;">LIQ: $${Math.round(item.liq).toLocaleString()}</div>
+                                <div style="font-size:0.55rem; color:#333;">${new Date(item.created_at).toLocaleTimeString()}</div>
                             </div>
-                            <a href="https://dexscreener.com/solana/${item.ca}" target="_blank" class="btn-trade">VIEW CHART</a>
+                            <a href="https://dexscreener.com/solana/${item.ca}" target="_blank" class="btn-dex">CHART</a>
                         </div>
-                    </div>`;
+                    </div>
+                `;
             }).join('');
-            
-            document.getElementById('update-timer').innerText = `UPDATED AT ${new Date().toLocaleTimeString()}`;
         }
 
-        // 初始化加载与定时轮询
-        loadSignals();
-        setInterval(loadSignals, 10000); // 10秒刷新一次
+        fetchSignals();
+        setInterval(fetchSignals, 10000);
     </script>
 </body>
 </html>
