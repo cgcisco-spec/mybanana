@@ -4,187 +4,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banana Radar | Smart Scanner</title>
+    <title>Banana Radar | Alpha Terminal</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        :root { --gold: #f1c40f; --bg: #0a0a0a; --card: #161616; --border: #262626; --green: #4ade80; }
+        :root { --gold: #f1c40f; --bg: #0a0a0a; --card: #161616; --border: #262626; --discord: #5865F2; }
         body { background: var(--bg); color: #fff; font-family: 'Space Grotesk', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .container { width: 100%; max-width: 420px; padding: 40px 20px; box-sizing: border-box; }
-        .radar-panel { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); text-align: center; }
+        .radar-panel { background: var(--card); border: 1px solid var(--border); border-radius: 28px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-align: center; }
         
-        /* 按钮与输入框 */
-        .btn { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: #222; color: #fff; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; transition: 0.2s; font-size: 0.85rem; }
-        .btn:hover { border-color: var(--gold); background: #282828; }
+        /* 登录组 */
+        .login-group { display: flex; flex-direction: column; gap: 12px; margin-top: 25px; }
+        .btn { width: 100%; padding: 15px; border-radius: 14px; border: 1px solid var(--border); background: #222; color: #fff; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.2s; font-size: 0.85rem; }
+        .btn:hover { border-color: var(--gold); background: #282828; transform: translateY(-1px); }
         .btn-gold { background: var(--gold); color: #000; border: none; }
-        .btn-discord { color: #5865F2; border-color: #5865F2; margin-top: 10px; }
-        input { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 12px; border-radius: 10px; font-size: 1.1rem; margin: 10px 0; text-align: center; box-sizing: border-box; }
+        .btn-discord { background: transparent; border-color: var(--discord); color: var(--discord); }
+        .btn-discord:hover { background: var(--discord); color: #fff; }
+
+        /* 列表展示 */
+        .signal-list-wrapper { margin-top: 20px; text-align: left; }
+        .signal-card { background: #000; border: 1px solid #1a1a1a; border-radius: 16px; padding: 16px; margin-bottom: 15px; position: relative; animation: slideIn 0.4s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
         
-        /* 信号流样式 */
-        .signal-container { margin-top: 30px; text-align: left; }
-        .signal-card { background: #000; border: 1px solid #222; border-radius: 14px; padding: 15px; margin-bottom: 12px; transition: 0.3s; }
-        .signal-card:hover { border-color: #444; }
-        .tag { font-size: 0.6rem; background: #222; padding: 2px 6px; border-radius: 4px; color: #888; }
-        .score-badge { color: var(--gold); font-weight: 700; font-size: 0.9rem; }
-        .narrative-box { font-size: 0.75rem; color: #aaa; margin: 8px 0; line-height: 1.4; font-style: italic; }
+        .rank-tag { position: absolute; right: 12px; top: 12px; font-size: 0.6rem; color: #444; font-weight: 700; letter-spacing: 1px; }
+        .score-display { color: var(--gold); font-size: 1.2rem; font-weight: 700; }
+        .narrative-text { font-size: 0.75rem; color: #999; margin: 10px 0; line-height: 1.4; font-family: 'Inter', sans-serif; border-left: 2px solid #333; padding-left: 10px; }
         
-        #console { background: #000; border-radius: 10px; padding: 10px; height: 50px; overflow-y: auto; font-family: monospace; font-size: 0.65rem; color: #444; margin-top: 15px; border: 1px solid #111; text-align: left; }
+        #refresh-timer { font-family: monospace; color: var(--gold); font-size: 0.65rem; background: rgba(241, 196, 15, 0.1); padding: 4px 8px; border-radius: 4px; }
+        #console { display: none; } /* 极简模式下隐藏控制台日志 */
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="radar-panel">
-            <h1 style="letter-spacing: 2px; margin-bottom: 5px; font-size: 1.8rem;">BANANA <span style="color:var(--gold)">RADAR</span></h1>
-            <p style="font-size: 0.7rem; color: #666; margin-bottom: 25px; letter-spacing: 1px;">AI-POWERED SOLANA SIGNALS</p>
+            <h1 style="letter-spacing: 3px; margin-bottom: 5px; font-size: 1.8rem;">BANANA <span style="color:var(--gold)">RADAR</span></h1>
+            <p style="font-size: 0.7rem; color: #555; margin-bottom: 30px; letter-spacing: 1px;">INSTANT ALPHA TERMINAL</p>
 
             <div id="logged-out-view">
-                <button class="btn btn-gold" onclick="loginGoogle()">
-                    <img src="https://www.google.com/favicon.ico" width="16"> CONTINUE WITH GOOGLE
-                </button>
+                <div class="login-group">
+                    <button class="btn btn-gold" onclick="login('google')">
+                        <img src="https://www.google.com/favicon.ico" width="16"> CONTINUE WITH GOOGLE
+                    </button>
+                    <button class="btn btn-discord" onclick="login('discord')">
+                        <i class="fa-brands fa-discord"></i> CONTINUE WITH DISCORD
+                    </button>
+                </div>
             </div>
             
             <div id="logged-in-view" style="display: none;">
-                <div id="user-email" style="font-size: 0.8rem; font-weight: 700; color: var(--gold); margin-bottom: 5px;">User</div>
-                
-                <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 15px; margin: 15px 0; border: 1px solid #1a1a1a;">
-                    <label style="font-size: 0.6rem; color: #555; display: block; text-align: left;">ALGO SENSITIVITY (MIN SCORE)</label>
-                    <input type="number" id="score-input" value="65">
-                    <button class="btn btn-gold" style="height: 40px; font-size: 0.75rem;" onclick="updateScore()">SAVE SETTINGS</button>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; padding: 0 5px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <img id="user-avatar" src="" style="width:24px; border-radius:50%; border: 1px solid var(--gold); display:none;">
+                        <span id="user-name" style="font-size: 0.8rem; font-weight: 700; color: #fff;">USER</span>
+                    </div>
+                    <a href="javascript:logout()" style="color:#444; font-size:0.6rem; text-decoration:none; border: 1px solid #222; padding: 4px 8px; border-radius: 6px;">LOGOUT</a>
                 </div>
 
-                <button class="btn btn-discord" id="discord-link-btn" onclick="linkDiscord()">
-                    <i class="fa-brands fa-discord"></i> LINK DISCORD BOT
-                </button>
-
-                <div class="signal-container">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div class="signal-list-wrapper">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
                         <span style="font-size: 0.8rem; font-weight: 700; color: var(--gold); letter-spacing: 1px;">
-                            <i class="fa-solid fa-bolt"></i> LIVE RADAR
+                            <i class="fa-solid fa-tower-broadcast"></i> LIVE FEED
                         </span>
-                        <span id="sync-status" style="font-size: 0.6rem; color: #444;">SYNCING...</span>
+                        <span id="refresh-timer">RESCANNING: 10s</span>
                     </div>
+                    
                     <div id="signal-list">
                         </div>
                 </div>
-                
-                <a href="javascript:logout()" style="color:#333; font-size:0.65rem; text-decoration:none; display:block; margin-top:25px;">Sign Out</a>
             </div>
-
-            <div id="console"></div>
         </div>
     </div>
 
     <script>
-        // 配置信息
         const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
         const sb = supabase.createClient(SB_URL, SB_KEY);
 
-        function addLog(msg) {
-            const d = document.createElement('div');
-            d.innerText = `> ${msg}`;
-            const consoleBox = document.getElementById('console');
-            consoleBox.prepend(d);
-        }
+        let countdown = 10;
 
-        // --- 核心功能：抓取 Brain 审计结果 ---
         async function fetchSignals() {
-            try {
-                const { data, error } = await sb
-                    .from('pending_pool')
-                    .select('*')
-                    .eq('status', 'passed')
-                    .order('created_at', { ascending: false })
-                    .limit(5);
+            const { data, error } = await sb
+                .from('pending_pool')
+                .select('*')
+                .eq('status', 'passed')
+                .order('banana_score', { ascending: false })
+                .limit(5);
 
-                if (error) throw error;
+            if (error) return;
 
-                const list = document.getElementById('signal-list');
-                document.getElementById('sync-status').innerText = "LIVE NOW";
+            const list = document.getElementById('signal-list');
+            list.innerHTML = '';
+            
+            data.forEach((item, index) => {
+                const ageSec = Math.floor((new Date() - new Date(item.created_at))/1000);
+                const timeStr = ageSec < 60 ? `${ageSec}s ago` : `${Math.floor(ageSec/60)}m ago`;
                 
-                if (!data || data.length === 0) {
-                    list.innerHTML = '<p style="font-size:0.7rem; color:#444; text-align:center;">Waiting for AI signals...</p>';
-                    return;
-                }
+                const card = document.createElement('div');
+                card.className = 'signal-card';
+                card.innerHTML = `
+                    <div class="rank-tag">#${index + 1} • ${timeStr}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="color: var(--gold); font-weight: 700; font-size: 1.1rem;">$${item.symbol || 'NEW'}</span>
+                            <div style="font-size: 0.55rem; color: #444; font-family: monospace; margin-top:2px;">${item.ca.slice(0,6)}...${item.ca.slice(-6)}</div>
+                        </div>
+                        <div class="score-display">${item.banana_score}</div>
+                    </div>
+                    <div class="narrative-text">${item.narrative_log || 'Narrative analysis pending...'}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                        <a href="https://dexscreener.com/solana/${item.ca}" target="_blank" style="color: #fff; font-size: 0.6rem; text-decoration: none; background:#222; padding: 4px 10px; border-radius: 6px;">TRADE</a>
+                        <span style="color: #333; font-size: 0.55rem;">LIQ: $${item.liq ? item.liq.toLocaleString() : '0'}</span>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+            countdown = 10;
+        }
 
-                list.innerHTML = ''; 
-                data.forEach(item => {
-                    const card = document.createElement('div');
-                    card.className = 'signal-card';
-                    card.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: start;">
-                            <div>
-                                <span style="color: #fff; font-weight: 700; font-size: 1rem;">$${item.symbol || 'NEW'}</span>
-                                <span class="tag">SOLANA</span>
-                            </div>
-                            <div class="score-badge">${item.banana_score} <span style="font-size:0.6rem; color:#444;">pts</span></div>
-                        </div>
-                        <div class="narrative-box">"${item.narrative_log || 'Analyzing narrative potential...'}"</div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                            <a href="https://dexscreener.com/solana/${item.ca}" target="_blank" style="color: var(--gold); font-size: 0.65rem; text-decoration: none; font-weight:700;">[ VIEW CHART ]</a>
-                            <span style="color: #333; font-size: 0.6rem; font-family: monospace;">${item.ca.slice(0,4)}...${item.ca.slice(-4)}</span>
-                        </div>
-                    `;
-                    list.appendChild(card);
-                });
-            } catch (err) {
-                console.error("Signal fetch error:", err);
+        // 定时刷新
+        setInterval(() => {
+            if (document.getElementById('logged-in-view').style.display === 'block') {
+                countdown--;
+                document.getElementById('refresh-timer').innerText = `RESCANNING: ${countdown}s`;
+                if (countdown <= 0) fetchSignals();
             }
-        }
+        }, 1000);
 
-        async function loginGoogle() {
-            await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
-        }
-
-        async function linkDiscord() {
-            addLog("Syncing with Discord...");
-            await sb.auth.signInWithOAuth({ provider: 'discord', options: { redirectTo: window.location.origin } });
-        }
-
-        async function updateScore() {
-            const { data: { user } } = await sb.auth.getUser();
-            if(!user) return;
-            const score = document.getElementById('score-input').value;
-            await sb.from('whitelist').update({ min_score: parseInt(score) }).eq('wallet_address', user.email);
-            addLog("Sensitivity updated.");
+        async function login(provider) {
+            await sb.auth.signInWithOAuth({ provider: provider, options: { redirectTo: window.location.origin } });
         }
 
         function logout() { sb.auth.signOut(); location.reload(); }
 
-        // --- 初始化逻辑 ---
         (async () => {
             const { data: { user } } = await sb.auth.getUser();
             if (user) {
-                const provider = user.app_metadata.provider;
                 document.getElementById('logged-out-view').style.display = 'none';
                 document.getElementById('logged-in-view').style.display = 'block';
                 
-                const email = user.email;
-                document.getElementById('user-email').innerText = email;
+                // 抓取昵称
+                const displayName = user.user_metadata.full_name || user.user_metadata.custom_claims?.global_name || user.email.split('@')[0];
+                document.getElementById('user-name').innerText = displayName.toUpperCase();
+                
+                // 抓取头像
+                if(user.user_metadata.avatar_url) {
+                    const avatar = document.getElementById('user-avatar');
+                    avatar.src = user.user_metadata.avatar_url;
+                    avatar.style.display = 'inline-block';
+                }
 
-                // 更新用户活跃状态
+                // 记录白名单活跃（自动同步）
                 await sb.from('whitelist').upsert({ 
-                    wallet_address: email, 
+                    wallet_address: user.email, 
                     last_seen: new Date().toISOString() 
                 }, { onConflict: 'wallet_address' });
 
-                if (provider === 'discord') {
-                    await sb.from('whitelist').update({ discord_id: user.user_metadata.sub }).eq('wallet_address', email);
-                    const btn = document.getElementById('discord-link-btn');
-                    btn.innerHTML = '✅ DISCORD LINKED';
-                    btn.style.borderColor = 'var(--green)';
-                    btn.style.color = 'var(--green)';
-                    btn.onclick = null;
-                }
-
-                // 启动信号流轮询
                 fetchSignals();
-                setInterval(fetchSignals, 8000); 
             }
-            addLog("Radar initialized.");
         })();
     </script>
 </body>
