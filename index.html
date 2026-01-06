@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,24 +10,35 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        :root { --gold: #f1c40f; --bg: #0a0a0a; --card: #161616; --border: #262626; }
+        :root { --gold: #f1c40f; --bg: #0a0a0a; --card: #161616; --border: #262626; --green: #4ade80; }
         body { background: var(--bg); color: #fff; font-family: 'Space Grotesk', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 400px; padding: 50px 20px; }
-        .radar-panel { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); text-align: center; }
-        .btn { width: 100%; padding: 15px; border-radius: 14px; border: 1px solid var(--border); background: #222; color: #fff; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; transition: 0.2s; }
+        .container { width: 100%; max-width: 420px; padding: 40px 20px; box-sizing: border-box; }
+        .radar-panel { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); text-align: center; }
+        
+        /* 按钮与输入框 */
+        .btn { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: #222; color: #fff; cursor: pointer; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; transition: 0.2s; font-size: 0.85rem; }
         .btn:hover { border-color: var(--gold); background: #282828; }
         .btn-gold { background: var(--gold); color: #000; border: none; }
-        .btn-discord { color: #5865F2; border-color: #5865F2; margin-top: 15px; }
-        input { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 16px; border-radius: 12px; font-size: 1.2rem; margin: 15px 0; text-align: center; box-sizing: border-box; }
-        #console { background: #000; border-radius: 10px; padding: 12px; height: 60px; overflow-y: auto; font-family: monospace; font-size: 0.7rem; color: #444; margin-top: 20px; border: 1px solid #111; text-align: left; }
+        .btn-discord { color: #5865F2; border-color: #5865F2; margin-top: 10px; }
+        input { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 12px; border-radius: 10px; font-size: 1.1rem; margin: 10px 0; text-align: center; box-sizing: border-box; }
+        
+        /* 信号流样式 */
+        .signal-container { margin-top: 30px; text-align: left; }
+        .signal-card { background: #000; border: 1px solid #222; border-radius: 14px; padding: 15px; margin-bottom: 12px; transition: 0.3s; }
+        .signal-card:hover { border-color: #444; }
+        .tag { font-size: 0.6rem; background: #222; padding: 2px 6px; border-radius: 4px; color: #888; }
+        .score-badge { color: var(--gold); font-weight: 700; font-size: 0.9rem; }
+        .narrative-box { font-size: 0.75rem; color: #aaa; margin: 8px 0; line-height: 1.4; font-style: italic; }
+        
+        #console { background: #000; border-radius: 10px; padding: 10px; height: 50px; overflow-y: auto; font-family: monospace; font-size: 0.65rem; color: #444; margin-top: 15px; border: 1px solid #111; text-align: left; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="radar-panel">
-            <h1 style="letter-spacing: 2px; margin-bottom: 5px;">BANANA <span style="color:var(--gold)">RADAR</span></h1>
-            <p style="font-size: 0.75rem; color: #666; margin-bottom: 30px;">AI-POWERED SOLANA SIGNALS</p>
+            <h1 style="letter-spacing: 2px; margin-bottom: 5px; font-size: 1.8rem;">BANANA <span style="color:var(--gold)">RADAR</span></h1>
+            <p style="font-size: 0.7rem; color: #666; margin-bottom: 25px; letter-spacing: 1px;">AI-POWERED SOLANA SIGNALS</p>
 
             <div id="logged-out-view">
                 <button class="btn btn-gold" onclick="loginGoogle()">
@@ -35,37 +47,38 @@
             </div>
             
             <div id="logged-in-view" style="display: none;">
-                <div id="user-email" style="font-weight: 700; color: var(--gold); margin-bottom: 10px;">User</div>
+                <div id="user-email" style="font-size: 0.8rem; font-weight: 700; color: var(--gold); margin-bottom: 5px;">User</div>
                 
-                <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 15px; margin: 20px 0;">
-                    <label style="font-size: 0.65rem; color: #555; display: block; margin-bottom: 10px;">SIGNAL SENSITIVITY (0-1000)</label>
-                    <input type="number" id="score-input" value="300">
-                    <button class="btn btn-gold" style="height: 45px;" onclick="updateScore()">SAVE SETTINGS</button>
+                <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 15px; margin: 15px 0; border: 1px solid #1a1a1a;">
+                    <label style="font-size: 0.6rem; color: #555; display: block; text-align: left;">ALGO SENSITIVITY (MIN SCORE)</label>
+                    <input type="number" id="score-input" value="65">
+                    <button class="btn btn-gold" style="height: 40px; font-size: 0.75rem;" onclick="updateScore()">SAVE SETTINGS</button>
                 </div>
 
                 <button class="btn btn-discord" id="discord-link-btn" onclick="linkDiscord()">
                     <i class="fa-brands fa-discord"></i> LINK DISCORD BOT
                 </button>
+
+                <div class="signal-container">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <span style="font-size: 0.8rem; font-weight: 700; color: var(--gold); letter-spacing: 1px;">
+                            <i class="fa-solid fa-bolt"></i> LIVE RADAR
+                        </span>
+                        <span id="sync-status" style="font-size: 0.6rem; color: #444;">SYNCING...</span>
+                    </div>
+                    <div id="signal-list">
+                        </div>
+                </div>
                 
-                <a href="javascript:logout()" style="color:#333; font-size:0.7rem; text-decoration:none; display:block; margin-top:20px;">Sign Out</a>
+                <a href="javascript:logout()" style="color:#333; font-size:0.65rem; text-decoration:none; display:block; margin-top:25px;">Sign Out</a>
             </div>
 
             <div id="console"></div>
         </div>
     </div>
-<div class="info-section" style="margin-top: 30px; font-size: 0.8rem; color: #888; line-height: 1.6;">
-    <h3 style="color: var(--gold); font-size: 0.9rem; margin-bottom: 10px;">🍌 How to start?</h3>
-    <ul style="padding-left: 20px; list-style-type: square;">
-        <li><b>Login with Google:</b> Securely save your custom alert settings.</li>
-        <li><b>Set Threshold:</b> Score < 300 is safe, < 100 is elite.</li>
-        <li><b>Link Discord:</b> Receive real-time "DeepSeek AI" analyzed signals.</li>
-    </ul>
-    <p style="background: rgba(241,196,15,0.05); padding: 10px; border-radius: 8px; border-left: 3px solid var(--gold);">
-        💡 <b>Pro Tip:</b> Keep your Discord DM open to catch 10x gems before they hit the trending lists.
-    </p>
-</div>
 
     <script>
+        // 配置信息
         const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
         const sb = supabase.createClient(SB_URL, SB_KEY);
@@ -73,22 +86,62 @@
         function addLog(msg) {
             const d = document.createElement('div');
             d.innerText = `> ${msg}`;
-            document.getElementById('console').prepend(d);
+            const consoleBox = document.getElementById('console');
+            consoleBox.prepend(d);
+        }
+
+        // --- 核心功能：抓取 Brain 审计结果 ---
+        async function fetchSignals() {
+            try {
+                const { data, error } = await sb
+                    .from('pending_pool')
+                    .select('*')
+                    .eq('status', 'passed')
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                if (error) throw error;
+
+                const list = document.getElementById('signal-list');
+                document.getElementById('sync-status').innerText = "LIVE NOW";
+                
+                if (!data || data.length === 0) {
+                    list.innerHTML = '<p style="font-size:0.7rem; color:#444; text-align:center;">Waiting for AI signals...</p>';
+                    return;
+                }
+
+                list.innerHTML = ''; 
+                data.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'signal-card';
+                    card.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div>
+                                <span style="color: #fff; font-weight: 700; font-size: 1rem;">$${item.symbol || 'NEW'}</span>
+                                <span class="tag">SOLANA</span>
+                            </div>
+                            <div class="score-badge">${item.banana_score} <span style="font-size:0.6rem; color:#444;">pts</span></div>
+                        </div>
+                        <div class="narrative-box">"${item.narrative_log || 'Analyzing narrative potential...'}"</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                            <a href="https://dexscreener.com/solana/${item.ca}" target="_blank" style="color: var(--gold); font-size: 0.65rem; text-decoration: none; font-weight:700;">[ VIEW CHART ]</a>
+                            <span style="color: #333; font-size: 0.6rem; font-family: monospace;">${item.ca.slice(0,4)}...${item.ca.slice(-4)}</span>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+            } catch (err) {
+                console.error("Signal fetch error:", err);
+            }
         }
 
         async function loginGoogle() {
-            await sb.auth.signInWithOAuth({ 
-                provider: 'google', 
-                options: { redirectTo: window.location.origin } 
-            });
+            await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
         }
 
         async function linkDiscord() {
-            addLog("Redirecting to Discord...");
-            await sb.auth.signInWithOAuth({ 
-                provider: 'discord', 
-                options: { redirectTo: window.location.origin } 
-            });
+            addLog("Syncing with Discord...");
+            await sb.auth.signInWithOAuth({ provider: 'discord', options: { redirectTo: window.location.origin } });
         }
 
         async function updateScore() {
@@ -96,11 +149,12 @@
             if(!user) return;
             const score = document.getElementById('score-input').value;
             await sb.from('whitelist').update({ min_score: parseInt(score) }).eq('wallet_address', user.email);
-            addLog("Settings saved!", true);
+            addLog("Sensitivity updated.");
         }
 
         function logout() { sb.auth.signOut(); location.reload(); }
 
+        // --- 初始化逻辑 ---
         (async () => {
             const { data: { user } } = await sb.auth.getUser();
             if (user) {
@@ -108,33 +162,29 @@
                 document.getElementById('logged-out-view').style.display = 'none';
                 document.getElementById('logged-in-view').style.display = 'block';
                 
-                // 1. 获取 Email（作为唯一主键）
-                // 注意：由于没有钱包，我们直接用 email 填充数据库的 wallet_address 字段
                 const email = user.email;
                 document.getElementById('user-email').innerText = email;
 
-                // 2. 写入/更新基础信息
+                // 更新用户活跃状态
                 await sb.from('whitelist').upsert({ 
                     wallet_address: email, 
-                    last_seen: new Date().toISOString(), 
-                    auth_method:'google'
+                    last_seen: new Date().toISOString() 
                 }, { onConflict: 'wallet_address' });
 
-                // 3. 如果是 Discord 回调，更新 ID
                 if (provider === 'discord') {
-                    await sb.from('whitelist').update({ 
-                        discord_id: user.user_metadata.sub 
-                    }).eq('wallet_address', email);
-                    
+                    await sb.from('whitelist').update({ discord_id: user.user_metadata.sub }).eq('wallet_address', email);
                     const btn = document.getElementById('discord-link-btn');
                     btn.innerHTML = '✅ DISCORD LINKED';
-                    btn.style.borderColor = '#4ade80';
-                    btn.style.color = '#4ade80';
+                    btn.style.borderColor = 'var(--green)';
+                    btn.style.color = 'var(--green)';
                     btn.onclick = null;
-                    addLog("Discord synchronized.");
                 }
+
+                // 启动信号流轮询
+                fetchSignals();
+                setInterval(fetchSignals, 8000); 
             }
-            addLog("System ready.");
+            addLog("Radar initialized.");
         })();
     </script>
 </body>
