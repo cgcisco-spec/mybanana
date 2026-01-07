@@ -16,7 +16,7 @@
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text)}
-    .container{max-width:900px;margin:0 auto;padding:24px}
+    .container{max-width:980px;margin:0 auto;padding:24px}
 
     header{margin-bottom:18px}
     h1{margin:0;font-size:1.8rem;font-weight:700}
@@ -26,7 +26,7 @@
       background:var(--panel2);border:1px solid var(--line);
       border-radius:12px;padding:12px 16px;font-size:.72rem;
       display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;
-      color:var(--muted);margin-bottom:22px;
+      color:var(--muted);margin-bottom:18px;
     }
     .status-pill{
       display:inline-flex;align-items:center;gap:8px;
@@ -35,33 +35,64 @@
     }
     .dot{width:8px;height:8px;border-radius:999px;background:var(--good);display:inline-block}
 
-    .section{margin-bottom:28px}
-    .section-title{font-size:.75rem;letter-spacing:1px;color:var(--muted);margin-bottom:12px}
+    /* Layout */
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:16px;
+    }
+    @media (min-width: 980px){
+      .grid{ grid-template-columns: 1fr 1fr 1fr; }
+    }
+
+    .col{
+      background:transparent;
+    }
+
+    .col-head{
+      display:flex;justify-content:space-between;align-items:flex-end;gap:10px;
+      margin-bottom:10px;
+    }
+    .col-title{
+      font-size:.78rem;
+      letter-spacing:1px;
+      color:var(--muted);
+      text-transform:uppercase;
+    }
+    .col-meta{
+      font-size:.62rem;color:var(--muted);
+      border:1px solid var(--line);
+      background:#0b1220;
+      padding:5px 8px;border-radius:999px;
+    }
 
     .card{
       background:var(--panel);border:1px solid var(--line);
-      border-radius:16px;padding:16px;margin-bottom:14px;
+      border-radius:16px;padding:14px;margin-bottom:12px;
     }
     .card-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
-    .symbol{font-size:1.1rem;font-weight:700;color:var(--gold)}
-    .score{font-size:1.45rem;font-weight:700}
+    .symbol{font-size:1.02rem;font-weight:700;color:var(--gold)}
+    .score{font-size:1.28rem;font-weight:700}
 
-    .timeline-row{font-size:.7rem;color:var(--muted);margin-top:6px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
-    .badges{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+    .timeline-row{
+      font-size:.68rem;color:var(--muted);margin-top:6px;
+      display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap
+    }
+    .badges{margin-top:9px;display:flex;gap:7px;flex-wrap:wrap}
     .badge{
-      display:inline-block;font-size:.62rem;padding:4px 8px;border-radius:999px;
+      display:inline-block;font-size:.60rem;padding:4px 8px;border-radius:999px;
       background:#1b2433;border:1px solid var(--line);color:#cbd5f5;
     }
-    .narrative{margin-top:10px;font-size:.72rem;color:#d1d5db;line-height:1.35}
+    .narrative{margin-top:9px;font-size:.70rem;color:#d1d5db;line-height:1.35}
 
-    .card-actions{margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .card-actions{margin-top:11px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
     .btn-link{
       cursor:pointer;border:1px solid var(--line);background:#0b1220;color:var(--text);
-      padding:7px 10px;border-radius:10px;font-size:.65rem;text-decoration:none;
+      padding:7px 10px;border-radius:10px;font-size:.64rem;text-decoration:none;
     }
-    .liq{font-size:.62rem;color:var(--muted)}
+    .liq{font-size:.60rem;color:var(--muted)}
 
-    footer{margin-top:36px;font-size:.62rem;color:var(--muted);text-align:center;line-height:1.4}
+    footer{margin-top:28px;font-size:.62rem;color:var(--muted);text-align:center;line-height:1.4}
 
     /* Modal */
     .modal-backdrop{
@@ -70,7 +101,7 @@
       z-index:999;
     }
     .modal{
-      width:min(780px,100%);
+      width:min(820px,100%);
       background:var(--panel);border:1px solid var(--line);
       border-radius:18px;overflow:hidden;
       box-shadow:0 20px 60px rgba(0,0,0,.4);
@@ -111,9 +142,31 @@
       <div class="status-pill" id="observed-count">Tokens Observed: --</div>
     </div>
 
-    <div class="section">
-      <div class="section-title">TOP CONSENSUS TOKENS</div>
-      <div id="feed"></div>
+    <!-- 3-zone feed -->
+    <div class="grid">
+      <div class="col">
+        <div class="col-head">
+          <div class="col-title">CORE</div>
+          <div class="col-meta" id="core-meta">—</div>
+        </div>
+        <div id="core-list"></div>
+      </div>
+
+      <div class="col">
+        <div class="col-head">
+          <div class="col-title">STABLE</div>
+          <div class="col-meta" id="stable-meta">—</div>
+        </div>
+        <div id="stable-list"></div>
+      </div>
+
+      <div class="col">
+        <div class="col-head">
+          <div class="col-title">EARLY</div>
+          <div class="col-meta" id="early-meta">—</div>
+        </div>
+        <div id="early-list"></div>
+      </div>
     </div>
 
     <footer>
@@ -139,19 +192,19 @@
   </div>
 
 <script>
-   const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
+  // ====== Fill these two ======
+  const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
+  // ===========================
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Per-zone max items
+  const LIMIT_CORE = 5;
+  const LIMIT_STABLE = 5;
+  const LIMIT_EARLY = 6;
 
   function fmtTime(ts){
     try{ return new Date(ts).toLocaleString(); }catch(e){ return ts; }
-  }
-
-  function consensusLabel(item){
-    if (item.core_confirmed) return "CORE CONSENSUS";
-    if (item.stable_confirmed) return "STABLE CONSENSUS";
-    if (item.forming_confirmed) return "FORMING CONSENSUS";
-    return "EARLY CONSENSUS";
   }
 
   function observedMinutes(item){
@@ -160,6 +213,97 @@
     const mins = Math.max(0, Math.floor((Date.now() - new Date(base).getTime()) / 60000));
     return mins;
   }
+
+  function zoneOf(item){
+    if (item.core_confirmed) return "CORE";
+    if (item.stable_confirmed) return "STABLE";
+    // EARLY 包含：forming_confirmed + 还没 forming 的（真正早期）
+    return "EARLY";
+  }
+
+  function zoneLabel(item){
+    if (item.core_confirmed) return "CORE CONSENSUS";
+    if (item.stable_confirmed) return "STABLE CONSENSUS";
+    if (item.forming_confirmed) return "FORMING CONSENSUS";
+    return "EARLY CONSENSUS";
+  }
+
+  function renderCard(item){
+    const mins = observedMinutes(item);
+    const label = zoneLabel(item);
+
+    const badges = `
+      <span class="badge">Liquidity Verified</span>
+      ${item.smart_money_count > 0 ? `<span class="badge">Smart Money Detected</span>` : ``}
+      <span class="badge">Narrative Logged</span>
+    `;
+
+    return `
+      <div class="card">
+        <div class="card-header">
+          <div class="symbol">$${item.symbol ?? "???"}</div>
+          <div class="score">${(item.banana_score ?? 0).toFixed(2)}</div>
+        </div>
+
+        <div class="timeline-row">
+          <div>${label}</div>
+          <div>Observed <b>${mins}m</b></div>
+        </div>
+
+        <div class="badges">${badges}</div>
+
+        <div class="narrative">"${item.narrative_log ?? "—"}"</div>
+
+        <div class="card-actions">
+          <button class="btn-link" onclick="openTimeline('${item.ca}','${item.symbol ?? ""}')">View Timeline</button>
+          <div class="liq">LIQ: $${Math.round(item.liq ?? 0).toLocaleString()}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function setMetaCounts(coreN, stableN, earlyN){
+    document.getElementById("core-meta").innerText = `${coreN} shown`;
+    document.getElementById("stable-meta").innerText = `${stableN} shown`;
+    document.getElementById("early-meta").innerText = `${earlyN} shown`;
+  }
+
+  async function loadThreeZoneFeed(){
+    // 一次性取更多数据，然后前端分区（避免三次请求）
+    // 这里取 30 条 passed，基本够分区了
+    const { data } = await sb
+      .from("pending_pool")
+      .select("ca,symbol,liq,banana_score,smart_money_count,narrative_log,created_at,first_passed_at,forming_confirmed,stable_confirmed,core_confirmed")
+      .eq("status","passed")
+      .order("banana_score",{ascending:false})
+      .limit(30);
+
+    const coreList = [];
+    const stableList = [];
+    const earlyList = [];
+
+    (data || []).forEach(item => {
+      const z = zoneOf(item);
+      if (z === "CORE" && coreList.length < LIMIT_CORE) coreList.push(item);
+      else if (z === "STABLE" && stableList.length < LIMIT_STABLE) stableList.push(item);
+      else if (z === "EARLY" && earlyList.length < LIMIT_EARLY) earlyList.push(item);
+    });
+
+    document.getElementById("core-list").innerHTML = coreList.map(renderCard).join("") || `<div class="loading">No CORE tokens yet.</div>`;
+    document.getElementById("stable-list").innerHTML = stableList.map(renderCard).join("") || `<div class="loading">No STABLE tokens yet.</div>`;
+    document.getElementById("early-list").innerHTML = earlyList.map(renderCard).join("") || `<div class="loading">No EARLY tokens yet.</div>`;
+
+    setMetaCounts(coreList.length, stableList.length, earlyList.length);
+
+    document.getElementById("last-update").innerText = "Last Evaluation: just now";
+    document.getElementById("observed-count").innerText = "Tokens Observed: " + (data?.length || 0);
+  }
+
+  // ===== Timeline Modal =====
+  const backdrop = document.getElementById("modal-backdrop");
+  document.getElementById("modal-close").onclick = () => closeTimeline();
+  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeTimeline(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeTimeline(); });
 
   function eventTitle(evt){
     const map = {
@@ -197,59 +341,6 @@
     return JSON.stringify(payload);
   }
 
-  async function loadFeed(){
-    const { data } = await sb
-      .from("pending_pool")
-      .select("ca,symbol,liq,banana_score,smart_money_count,narrative_log,created_at,first_passed_at,forming_confirmed,stable_confirmed,core_confirmed")
-      .eq("status","passed")
-      .order("banana_score",{ascending:false})
-      .limit(5);
-
-    const feed = document.getElementById("feed");
-    feed.innerHTML = "";
-
-    data?.forEach(item => {
-      const mins = observedMinutes(item);
-      const label = consensusLabel(item);
-
-      feed.innerHTML += `
-        <div class="card">
-          <div class="card-header">
-            <div class="symbol">$${item.symbol ?? "???"}</div>
-            <div class="score">${(item.banana_score ?? 0).toFixed(2)}</div>
-          </div>
-
-          <div class="timeline-row">
-            <div>${label}</div>
-            <div>Observed for <b>${mins}m</b></div>
-          </div>
-
-          <div class="badges">
-            <span class="badge">Liquidity Verified</span>
-            ${item.smart_money_count > 0 ? `<span class="badge">Smart Money Detected</span>` : ``}
-            <span class="badge">Narrative Logged</span>
-          </div>
-
-          <div class="narrative">"${item.narrative_log ?? "—"}"</div>
-
-          <div class="card-actions">
-            <button class="btn-link" onclick="openTimeline('${item.ca}','${item.symbol ?? ""}')">View Timeline</button>
-            <div class="liq">LIQ: $${Math.round(item.liq ?? 0).toLocaleString()}</div>
-          </div>
-        </div>
-      `;
-    });
-
-    document.getElementById("last-update").innerText = "Last Evaluation: just now";
-    document.getElementById("observed-count").innerText = "Tokens Observed: " + (data?.length || 0);
-  }
-
-  // Modal controls
-  const backdrop = document.getElementById("modal-backdrop");
-  document.getElementById("modal-close").onclick = () => closeTimeline();
-  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeTimeline(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeTimeline(); });
-
   async function openTimeline(ca, symbol){
     document.getElementById("modal-title").innerText = `Timeline · $${symbol || "???"}`;
     document.getElementById("modal-sub").innerText = ca;
@@ -261,7 +352,7 @@
       .select("event,payload,created_at")
       .eq("ca", ca)
       .order("created_at", { ascending: false })
-      .limit(30);
+      .limit(40);
 
     if (error){
       document.getElementById("modal-content").innerHTML =
@@ -292,8 +383,9 @@
     backdrop.style.display = "none";
   }
 
-  loadFeed();
-  setInterval(loadFeed, 10000);
+  // initial + refresh
+  loadThreeZoneFeed();
+  setInterval(loadThreeZoneFeed, 10000);
 </script>
 
 </body>
