@@ -45,6 +45,7 @@
     .card-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
     .symbol{font-size:1.1rem;font-weight:700;color:var(--gold)}
     .score{font-size:1.45rem;font-weight:700}
+
     .timeline-row{font-size:.7rem;color:var(--muted);margin-top:6px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
     .badges{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
     .badge{
@@ -93,7 +94,6 @@
     .tl-evt{font-size:.72rem;font-weight:700}
     .tl-time{font-size:.62rem;color:var(--muted)}
     .tl-detail{margin-top:6px;font-size:.68rem;color:#d1d5db;line-height:1.35}
-    .muted{color:var(--muted)}
     .loading{font-size:.7rem;color:var(--muted)}
   </style>
 </head>
@@ -139,28 +139,24 @@
   </div>
 
 <script>
-  const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
-  const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+   const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
+   const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   function fmtTime(ts){
-    try{
-      const d = new Date(ts);
-      return d.toLocaleString();
-    }catch(e){ return ts; }
+    try{ return new Date(ts).toLocaleString(); }catch(e){ return ts; }
   }
 
   function consensusLabel(item){
-    // v1：基于 consensus_confirmed & first_passed_at 推一个“人话状态”
-    // 你后续做 FORMING/STABLE/CORE，可直接扩展这里
-    if (item.consensus_confirmed) return "SUSTAINED CONSENSUS";
-    if (item.first_passed_at) return "FORMING CONSENSUS";
+    if (item.core_confirmed) return "CORE CONSENSUS";
+    if (item.stable_confirmed) return "STABLE CONSENSUS";
+    if (item.forming_confirmed) return "FORMING CONSENSUS";
     return "EARLY CONSENSUS";
   }
 
   function observedMinutes(item){
     const base = item.first_passed_at || item.created_at;
-    if (!base) return null;
+    if (!base) return 0;
     const mins = Math.max(0, Math.floor((Date.now() - new Date(base).getTime()) / 60000));
     return mins;
   }
@@ -171,7 +167,9 @@
       "FIRST_PASSED": "Passed initial threshold",
       "SMART_MONEY_DETECTED": "Smart money detected",
       "SCORE_UPDATE": "Score updated",
-      "CONSENSUS_CONFIRMED": "Consensus confirmed"
+      "CONSENSUS_FORMING": "Consensus forming",
+      "CONSENSUS_STABLE": "Consensus stabilized",
+      "CONSENSUS_CORE": "Core consensus established"
     };
     return map[evt] || evt;
   }
@@ -193,8 +191,8 @@
       const delta = payload.delta ?? "—";
       return `Score ${prev} → ${now} (${delta >= 0 ? "+" : ""}${delta})`;
     }
-    if (evt === "CONSENSUS_CONFIRMED"){
-      return `Sustained for ${payload.minutes_sustained ?? "—"} minutes`;
+    if (evt === "CONSENSUS_FORMING" || evt === "CONSENSUS_STABLE" || evt === "CONSENSUS_CORE"){
+      return `Sustained for ${payload.minutes_sustained ?? "—"} minutes · Tier: ${payload.tier ?? "—"}`;
     }
     return JSON.stringify(payload);
   }
@@ -202,7 +200,7 @@
   async function loadFeed(){
     const { data } = await sb
       .from("pending_pool")
-      .select("ca,symbol,liq,banana_score,smart_money_count,narrative_log,created_at,first_passed_at,consensus_confirmed")
+      .select("ca,symbol,liq,banana_score,smart_money_count,narrative_log,created_at,first_passed_at,forming_confirmed,stable_confirmed,core_confirmed")
       .eq("status","passed")
       .order("banana_score",{ascending:false})
       .limit(5);
@@ -223,7 +221,7 @@
 
           <div class="timeline-row">
             <div>${label}</div>
-            <div class="muted">Observed for <b>${mins ?? 0}m</b></div>
+            <div>Observed for <b>${mins}m</b></div>
           </div>
 
           <div class="badges">
@@ -248,14 +246,9 @@
 
   // Modal controls
   const backdrop = document.getElementById("modal-backdrop");
-  const modalClose = document.getElementById("modal-close");
-  modalClose.onclick = () => closeTimeline();
-  backdrop.addEventListener("click", (e) => {
-    if (e.target === backdrop) closeTimeline();
-  });
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeTimeline();
-  });
+  document.getElementById("modal-close").onclick = () => closeTimeline();
+  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeTimeline(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeTimeline(); });
 
   async function openTimeline(ca, symbol){
     document.getElementById("modal-title").innerText = `Timeline · $${symbol || "???"}`;
@@ -268,7 +261,7 @@
       .select("event,payload,created_at")
       .eq("ca", ca)
       .order("created_at", { ascending: false })
-      .limit(20);
+      .limit(30);
 
     if (error){
       document.getElementById("modal-content").innerHTML =
@@ -278,7 +271,7 @@
 
     if (!data || data.length === 0){
       document.getElementById("modal-content").innerHTML =
-        `<div class="loading">No timeline yet. (Brain will start writing events after next audits.)</div>`;
+        `<div class="loading">No timeline yet. (Brain will write events after next audits.)</div>`;
       return;
     }
 
