@@ -193,8 +193,19 @@
 
 <script>
   // ====== Fill these two ======
-  const SB_URL = "https://ctizvqaqnsavuawprgzu.supabase.co";
-   const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
+  let sb = null;
+
+async function initSupabaseFromConfig() {
+  const r = await fetch("/api/config", { cache: "no-store" });
+  const cfg = await r.json();
+
+  if (!cfg.ok) {
+    throw new Error(cfg.error || "Failed to load /api/config");
+  }
+
+  sb = supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+}
+
   // ===========================
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -384,8 +395,38 @@
   }
 
   // initial + refresh
-  loadThreeZoneFeed();
-  setInterval(loadThreeZoneFeed, 10000);
+ (async () => {
+  try {
+    // 先初始化配置
+    await initSupabaseFromConfig();
+
+    // 再启动页面逻辑
+    await loadThreeZoneFeed();
+
+    // 倒计时 + 定时刷新
+    setInterval(tick, 1000);
+    setInterval(async () => {
+      secondsLeft = Math.floor(REFRESH_MS / 1000);
+      await loadThreeZoneFeed();
+    }, REFRESH_MS);
+
+  } catch (e) {
+    console.error(e);
+
+    // 给用户一个可见提示（避免白屏）
+    const core = document.getElementById("core-list");
+    const stable = document.getElementById("stable-list");
+    const early = document.getElementById("early-list");
+    const msg = `<div class="empty">Config load failed. Check /api/config and Vercel env vars.</div>`;
+    if (core) core.innerHTML = msg;
+    if (stable) stable.innerHTML = msg;
+    if (early) early.innerHTML = msg;
+
+    const last = document.getElementById("last-update");
+    if (last) last.innerText = "config error";
+  }
+})();
+
 </script>
 
 </body>
