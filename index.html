@@ -1,144 +1,114 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Banana Radar · v1 Alpha</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      --bg: #0b0e13;
-      --panel: #121722;
-      --muted: #6b7280;
-      --text: #e5e7eb;
-      --gold: #fbbf24;
-      --green: #22c55e;
+    :root{
+      --bg:#0b0e13; --panel:#121722; --panel2:#0f1420;
+      --line:#1f2937; --muted:#6b7280; --text:#e5e7eb;
+      --gold:#fbbf24; --good:#22c55e;
     }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text)}
+    .container{max-width:900px;margin:0 auto;padding:24px}
 
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: 'Space Grotesk', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
+    header{margin-bottom:18px}
+    h1{margin:0;font-size:1.8rem;font-weight:700}
+    .subtitle{font-size:.78rem;color:var(--muted);margin-top:4px}
 
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 24px;
+    .status-bar{
+      background:var(--panel2);border:1px solid var(--line);
+      border-radius:12px;padding:12px 16px;font-size:.72rem;
+      display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;
+      color:var(--muted);margin-bottom:22px;
     }
+    .status-pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:6px 10px;border-radius:999px;background:#0b1220;border:1px solid var(--line);
+      color:var(--muted);
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--good);display:inline-block}
 
-    header {
-      margin-bottom: 20px;
-    }
+    .section{margin-bottom:28px}
+    .section-title{font-size:.75rem;letter-spacing:1px;color:var(--muted);margin-bottom:12px}
 
-    h1 {
-      margin: 0;
-      font-size: 1.8rem;
-      font-weight: 700;
+    .card{
+      background:var(--panel);border:1px solid var(--line);
+      border-radius:16px;padding:16px;margin-bottom:14px;
     }
+    .card-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .symbol{font-size:1.1rem;font-weight:700;color:var(--gold)}
+    .score{font-size:1.45rem;font-weight:700}
+    .timeline-row{font-size:.7rem;color:var(--muted);margin-top:6px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .badges{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+    .badge{
+      display:inline-block;font-size:.62rem;padding:4px 8px;border-radius:999px;
+      background:#1b2433;border:1px solid var(--line);color:#cbd5f5;
+    }
+    .narrative{margin-top:10px;font-size:.72rem;color:#d1d5db;line-height:1.35}
 
-    .subtitle {
-      font-size: 0.75rem;
-      color: var(--muted);
-      margin-top: 4px;
+    .card-actions{margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .btn-link{
+      cursor:pointer;border:1px solid var(--line);background:#0b1220;color:var(--text);
+      padding:7px 10px;border-radius:10px;font-size:.65rem;text-decoration:none;
     }
+    .liq{font-size:.62rem;color:var(--muted)}
 
-    .status-bar {
-      background: #0f1420;
-      border: 1px solid #1f2937;
-      border-radius: 12px;
-      padding: 12px 16px;
-      font-size: 0.7rem;
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 24px;
-      color: var(--muted);
-    }
+    footer{margin-top:36px;font-size:.62rem;color:var(--muted);text-align:center;line-height:1.4}
 
-    .section {
-      margin-bottom: 32px;
+    /* Modal */
+    .modal-backdrop{
+      position:fixed;inset:0;background:rgba(0,0,0,.55);
+      display:none;align-items:center;justify-content:center;padding:18px;
+      z-index:999;
     }
-
-    .section-title {
-      font-size: 0.75rem;
-      letter-spacing: 1px;
-      color: var(--muted);
-      margin-bottom: 12px;
+    .modal{
+      width:min(780px,100%);
+      background:var(--panel);border:1px solid var(--line);
+      border-radius:18px;overflow:hidden;
+      box-shadow:0 20px 60px rgba(0,0,0,.4);
     }
-
-    .card {
-      background: var(--panel);
-      border: 1px solid #1f2937;
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 14px;
+    .modal-head{
+      background:var(--panel2);border-bottom:1px solid var(--line);
+      padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px
     }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .modal-title{font-weight:700}
+    .modal-sub{font-size:.68rem;color:var(--muted);margin-top:2px}
+    .modal-close{
+      cursor:pointer;border:1px solid var(--line);background:#0b1220;color:var(--text);
+      padding:6px 10px;border-radius:10px;font-size:.65rem;
     }
-
-    .symbol {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--gold);
+    .modal-body{padding:14px 16px}
+    .tl-item{
+      border:1px solid var(--line);border-radius:14px;padding:12px 12px;margin-bottom:10px;
+      background:#101827;
     }
-
-    .score {
-      font-size: 1.4rem;
-      font-weight: 700;
-    }
-
-    .badge {
-      display: inline-block;
-      font-size: 0.6rem;
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: #1f2937;
-      margin-right: 6px;
-      color: #cbd5f5;
-    }
-
-    .timeline {
-      font-size: 0.65rem;
-      color: var(--muted);
-      margin-top: 6px;
-    }
-
-    .narrative {
-      margin-top: 10px;
-      font-size: 0.7rem;
-      color: #d1d5db;
-    }
-
-    footer {
-      margin-top: 40px;
-      font-size: 0.6rem;
-      color: var(--muted);
-      text-align: center;
-    }
+    .tl-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .tl-evt{font-size:.72rem;font-weight:700}
+    .tl-time{font-size:.62rem;color:var(--muted)}
+    .tl-detail{margin-top:6px;font-size:.68rem;color:#d1d5db;line-height:1.35}
+    .muted{color:var(--muted)}
+    .loading{font-size:.7rem;color:var(--muted)}
   </style>
 </head>
 
 <body>
   <div class="container">
-
     <header>
       <h1>🍌 Banana Radar</h1>
       <div class="subtitle">Consensus Radar for New Tokens</div>
     </header>
 
     <div class="status-bar">
-      <div>SYSTEM: ACTIVE</div>
-      <div id="last-update">Last Evaluation: --</div>
-      <div id="observed-count">Tokens Observed: --</div>
+      <div class="status-pill"><span class="dot"></span> SYSTEM: ACTIVE</div>
+      <div class="status-pill" id="last-update">Last Evaluation: --</div>
+      <div class="status-pill" id="observed-count">Tokens Observed: --</div>
     </div>
 
     <div class="section">
@@ -150,7 +120,22 @@
       Signals are formed, tested, and invalidated over time.<br/>
       This system does not predict outcomes.
     </footer>
+  </div>
 
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="modal-title">Timeline</div>
+          <div class="modal-sub" id="modal-sub">—</div>
+        </div>
+        <button class="modal-close" id="modal-close">Close</button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-content" class="loading">Loading…</div>
+      </div>
+    </div>
   </div>
 
 <script>
@@ -158,49 +143,160 @@
   const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXp2cWFxbnNhdnVhd3ByZ3p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NzQwMzYsImV4cCI6MjA4MjE1MDAzNn0.-op8Pbjwv8YAPAFg7mnIk1tHgA1vi4Vf7i4yufvLaAA";
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  async function loadFeed() {
+  function fmtTime(ts){
+    try{
+      const d = new Date(ts);
+      return d.toLocaleString();
+    }catch(e){ return ts; }
+  }
+
+  function consensusLabel(item){
+    // v1：基于 consensus_confirmed & first_passed_at 推一个“人话状态”
+    // 你后续做 FORMING/STABLE/CORE，可直接扩展这里
+    if (item.consensus_confirmed) return "SUSTAINED CONSENSUS";
+    if (item.first_passed_at) return "FORMING CONSENSUS";
+    return "EARLY CONSENSUS";
+  }
+
+  function observedMinutes(item){
+    const base = item.first_passed_at || item.created_at;
+    if (!base) return null;
+    const mins = Math.max(0, Math.floor((Date.now() - new Date(base).getTime()) / 60000));
+    return mins;
+  }
+
+  function eventTitle(evt){
+    const map = {
+      "FIRST_AUDIT_DONE": "Initial audit completed",
+      "FIRST_PASSED": "Passed initial threshold",
+      "SMART_MONEY_DETECTED": "Smart money detected",
+      "SCORE_UPDATE": "Score updated",
+      "CONSENSUS_CONFIRMED": "Consensus confirmed"
+    };
+    return map[evt] || evt;
+  }
+
+  function eventDetail(evt, payload){
+    payload = payload || {};
+    if (evt === "FIRST_AUDIT_DONE"){
+      return `Score ${payload.score ?? "—"} · Liquidity $${Math.round(payload.liq_usd ?? 0).toLocaleString()} · Smart ${payload.smart_money_count ?? 0}`;
+    }
+    if (evt === "FIRST_PASSED"){
+      return `Score ${payload.score ?? "—"}`;
+    }
+    if (evt === "SMART_MONEY_DETECTED"){
+      return `Smart wallets: ${payload.smart_money_count ?? "—"}`;
+    }
+    if (evt === "SCORE_UPDATE"){
+      const prev = payload.previous_score ?? "—";
+      const now = payload.score ?? "—";
+      const delta = payload.delta ?? "—";
+      return `Score ${prev} → ${now} (${delta >= 0 ? "+" : ""}${delta})`;
+    }
+    if (evt === "CONSENSUS_CONFIRMED"){
+      return `Sustained for ${payload.minutes_sustained ?? "—"} minutes`;
+    }
+    return JSON.stringify(payload);
+  }
+
+  async function loadFeed(){
     const { data } = await sb
       .from("pending_pool")
-      .select("*")
-      .eq("status", "passed")
-      .order("banana_score", { ascending: false })
+      .select("ca,symbol,liq,banana_score,smart_money_count,narrative_log,created_at,first_passed_at,consensus_confirmed")
+      .eq("status","passed")
+      .order("banana_score",{ascending:false})
       .limit(5);
 
     const feed = document.getElementById("feed");
     feed.innerHTML = "";
 
     data?.forEach(item => {
-      const created = new Date(item.created_at);
-      const minutes = Math.floor((Date.now() - created) / 60000);
+      const mins = observedMinutes(item);
+      const label = consensusLabel(item);
 
       feed.innerHTML += `
         <div class="card">
           <div class="card-header">
-            <div class="symbol">$${item.symbol}</div>
-            <div class="score">${item.banana_score.toFixed(2)}</div>
+            <div class="symbol">$${item.symbol ?? "???"}</div>
+            <div class="score">${(item.banana_score ?? 0).toFixed(2)}</div>
           </div>
 
-          <div class="timeline">
-            Observed for ${minutes} minutes
+          <div class="timeline-row">
+            <div>${label}</div>
+            <div class="muted">Observed for <b>${mins ?? 0}m</b></div>
           </div>
 
-          <div style="margin-top:8px;">
+          <div class="badges">
             <span class="badge">Liquidity Verified</span>
             ${item.smart_money_count > 0 ? `<span class="badge">Smart Money Detected</span>` : ``}
-            <span class="badge">Narrative Passed</span>
+            <span class="badge">Narrative Logged</span>
           </div>
 
-          <div class="narrative">
-            "${item.narrative_log}"
+          <div class="narrative">"${item.narrative_log ?? "—"}"</div>
+
+          <div class="card-actions">
+            <button class="btn-link" onclick="openTimeline('${item.ca}','${item.symbol ?? ""}')">View Timeline</button>
+            <div class="liq">LIQ: $${Math.round(item.liq ?? 0).toLocaleString()}</div>
           </div>
         </div>
       `;
     });
 
-    document.getElementById("last-update").innerText =
-      "Last Evaluation: just now";
-    document.getElementById("observed-count").innerText =
-      "Tokens Observed: " + (data?.length || 0);
+    document.getElementById("last-update").innerText = "Last Evaluation: just now";
+    document.getElementById("observed-count").innerText = "Tokens Observed: " + (data?.length || 0);
+  }
+
+  // Modal controls
+  const backdrop = document.getElementById("modal-backdrop");
+  const modalClose = document.getElementById("modal-close");
+  modalClose.onclick = () => closeTimeline();
+  backdrop.addEventListener("click", (e) => {
+    if (e.target === backdrop) closeTimeline();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeTimeline();
+  });
+
+  async function openTimeline(ca, symbol){
+    document.getElementById("modal-title").innerText = `Timeline · $${symbol || "???"}`;
+    document.getElementById("modal-sub").innerText = ca;
+    document.getElementById("modal-content").innerHTML = `<div class="loading">Loading…</div>`;
+    backdrop.style.display = "flex";
+
+    const { data, error } = await sb
+      .from("token_timeline")
+      .select("event,payload,created_at")
+      .eq("ca", ca)
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (error){
+      document.getElementById("modal-content").innerHTML =
+        `<div class="loading">Failed to load timeline: ${error.message}</div>`;
+      return;
+    }
+
+    if (!data || data.length === 0){
+      document.getElementById("modal-content").innerHTML =
+        `<div class="loading">No timeline yet. (Brain will start writing events after next audits.)</div>`;
+      return;
+    }
+
+    const html = data.map(row => `
+      <div class="tl-item">
+        <div class="tl-top">
+          <div class="tl-evt">${eventTitle(row.event)}</div>
+          <div class="tl-time">${fmtTime(row.created_at)}</div>
+        </div>
+        <div class="tl-detail">${eventDetail(row.event, row.payload)}</div>
+      </div>
+    `).join("");
+
+    document.getElementById("modal-content").innerHTML = html;
+  }
+
+  function closeTimeline(){
+    backdrop.style.display = "none";
   }
 
   loadFeed();
