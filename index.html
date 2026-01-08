@@ -315,6 +315,7 @@ async function initSupabaseFromConfig() {
   document.getElementById("last-update").innerText = "just now";
 }
 
+
   // ===== Timeline Modal =====
   const backdrop = document.getElementById("modal-backdrop");
   document.getElementById("modal-close").onclick = () => closeTimeline();
@@ -358,25 +359,23 @@ async function initSupabaseFromConfig() {
   }
 
   async function openTimeline(ca, symbol){
-    document.getElementById("modal-title").innerText = `Timeline · $${symbol || "???"}`;
-    document.getElementById("modal-sub").innerText = ca;
-    document.getElementById("modal-content").innerHTML = `<div class="loading">Loading…</div>`;
-    backdrop.style.display = "flex";
+  document.getElementById("modal-title").innerText = `Timeline · $${symbol || "???"}`;
+  document.getElementById("modal-sub").innerText = ca;
+  document.getElementById("modal-content").innerHTML = `<div class="loading">Loading…</div>`;
+  backdrop.style.display = "flex";
 
-    const { data, error } = await sb
-      .from("token_timeline")
-      .select("event,payload,created_at")
-      .eq("ca", ca)
-      .order("created_at", { ascending: false })
-      .limit(40);
+  try{
+    const r = await fetch(`/api/timeline?ca=${encodeURIComponent(ca)}&limit=50`, { cache: "no-store" });
+    const js = await r.json();
 
-    if (error){
+    if (!js.ok){
       document.getElementById("modal-content").innerHTML =
-        `<div class="loading">Failed to load timeline: ${error.message}</div>`;
+        `<div class="loading">Failed to load timeline: ${js.error || "unknown error"}</div>`;
       return;
     }
 
-    if (!data || data.length === 0){
+    const data = js.timeline || [];
+    if (!data.length){
       document.getElementById("modal-content").innerHTML =
         `<div class="loading">No timeline yet. (Brain will write events after next audits.)</div>`;
       return;
@@ -393,7 +392,14 @@ async function initSupabaseFromConfig() {
     `).join("");
 
     document.getElementById("modal-content").innerHTML = html;
+
+  } catch (e){
+    console.error(e);
+    document.getElementById("modal-content").innerHTML =
+      `<div class="loading">Failed to load timeline (network error).</div>`;
   }
+}
+
 
   function closeTimeline(){
     backdrop.style.display = "none";
