@@ -1,549 +1,309 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Banana Radar · v1 Alpha</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Banana Radar · v1 Alpha</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
-  <style>
-    :root{
-      --bg:#0b0e13;
-      --panel:#121722;
-      --panel2:#0f1420;
-      --line:#1f2937;
-      --muted:#6b7280;
-      --text:#e5e7eb;
-      --gold:#fbbf24;
-      --good:#22c55e;
-      --soft:#9ca3af;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text)}
-    .container{max-width:980px;margin:0 auto;padding:24px}
+<style>
+:root{
+  --bg:#0b0e13;
+  --panel:#121722;
+  --panel2:#0f1420;
+  --line:#1f2937;
+  --muted:#6b7280;
+  --text:#e5e7eb;
+  --gold:#fbbf24;
 
-    header{margin-bottom:12px}
-    h1{margin:0;font-size:1.8rem;font-weight:900;display:flex;align-items:center;gap:10px;letter-spacing:.3px}
-    .subtitle{font-size:.78rem;color:var(--muted);margin-top:6px}
+  --early:#64748b;
+  --forming:#38bdf8;
+  --stable:#a78bfa;
+  --core:#fbbf24;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text)}
+.container{max-width:980px;margin:0 auto;padding:24px}
 
-    /* Radar Summary Bar */
-    .radar-bar{
-      margin:14px 0 18px;
-      padding:12px 14px;
-      border-radius:14px;
-      border:1px solid var(--line);
-      background:
-        radial-gradient(1200px 260px at 18% 50%, rgba(251,191,36,.08), rgba(0,0,0,0)),
-        radial-gradient(900px 260px at 82% 50%, rgba(34,197,94,.06), rgba(0,0,0,0)),
-        linear-gradient(180deg, rgba(15,20,32,.95), rgba(12,16,26,.95));
-      display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
-      color:var(--muted);
-      font-size:.72rem;
-    }
-    .pill{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:6px 10px;border-radius:999px;
-      background:#0b1220;border:1px solid var(--line);
-      color:var(--muted);
-      white-space:nowrap;
-    }
-    .dot{width:8px;height:8px;border-radius:999px;background:var(--good);display:inline-block}
-    .count-dot{width:6px;height:6px;border-radius:999px;background:#3b82f6;display:inline-block;opacity:.85}
-    .counts{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .timer{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .value{color:var(--text);font-weight:900}
+/* ---------- Header ---------- */
+header{margin-bottom:12px}
+h1{margin:0;font-size:1.8rem;font-weight:900}
+.subtitle{font-size:.78rem;color:var(--muted);margin-top:6px}
 
-    /* Zones */
-    .zones{display:flex;flex-direction:column;gap:14px}
-    .zone{
-      border-radius:18px;
-      border:1px solid var(--line);
-      overflow:hidden;
-      background:rgba(18,23,34,.55);
-    }
-    .zone-head{
-      padding:14px 16px;
-      background:
-        radial-gradient(1200px 220px at 20% 50%, rgba(251,191,36,.08), rgba(0,0,0,0)),
-        radial-gradient(900px 220px at 80% 50%, rgba(34,197,94,.05), rgba(0,0,0,0)),
-        linear-gradient(180deg, rgba(15,20,32,.95), rgba(12,16,26,.95));
-      border-bottom:1px solid var(--line);
-      display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
-    }
-    .zone-title{
-      display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
-      font-weight:900;
-      letter-spacing:1px;
-      text-transform:uppercase;
-    }
-    .zone-title .big{font-size:.95rem;color:var(--text)}
-    .zone-title .sub{font-size:.70rem;color:var(--muted);font-weight:600;letter-spacing:.4px;text-transform:none}
-    .zone-meta{
-      font-size:.62rem;color:var(--muted);
-      border:1px solid var(--line);
-      background:#0b1220;
-      padding:6px 10px;border-radius:999px;
-      display:flex;gap:10px;align-items:center;
-    }
-    .meta-dot{width:6px;height:6px;border-radius:999px;background:#3b82f6;display:inline-block;opacity:.8}
-    .zone-body{padding:12px 12px 4px}
+/* ---------- Radar Summary ---------- */
+.radar-bar{
+  margin:14px 0 18px;
+  padding:12px 14px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:linear-gradient(180deg,#0f1420,#0b0f19);
+  display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
+  font-size:.72rem;color:var(--muted);
+}
+.pill{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 10px;border-radius:999px;
+  background:#0b1220;border:1px solid var(--line);
+}
+.value{color:var(--text);font-weight:900}
 
-    /* Cards */
-    .card{
-      background:linear-gradient(180deg, rgba(18,23,34,.9), rgba(15,20,32,.9));
-      border:1px solid var(--line);
-      border-radius:16px;
-      padding:13px 14px;
-      margin-bottom:10px;
-    }
-    .row-top{
-      display:flex;justify-content:space-between;align-items:center;gap:12px;
-    }
-    .left{display:flex;align-items:center;gap:10px;min-width:0}
-    .rank{
-      width:26px;height:26px;border-radius:10px;
-      display:flex;align-items:center;justify-content:center;
-      background:#0b1220;border:1px solid var(--line);
-      font-size:.72rem;color:var(--soft);font-weight:900;
-      flex:0 0 auto;
-    }
-    .token{min-width:0}
-    .symbol{
-      font-weight:900;
-      color:var(--gold);
-      font-size:1.02rem;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    }
-    .mini{
-      margin-top:3px;
-      font-size:.62rem;
-      color:var(--muted);
-      display:flex;gap:10px;flex-wrap:wrap;
-    }
-    .tag{
-      display:inline-flex;align-items:center;gap:6px;
-      padding:3px 8px;border-radius:999px;
-      background:#0b1220;border:1px solid var(--line);
-      color:var(--muted);
-    }
-    .score{
-      font-weight:900;
-      font-size:1.20rem;
-      flex:0 0 auto;
-      color:var(--text);
-    }
-    .narrative{
-      margin-top:9px;
-      font-size:.70rem;color:#d1d5db;line-height:1.35;
-      opacity:.95;
-    }
-    .actions{
-      margin-top:10px;
-      display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
-    }
-    .btn{
-      cursor:pointer;
-      border:1px solid var(--line);
-      background:#0b1220;
-      color:var(--text);
-      padding:7px 10px;
-      border-radius:10px;
-      font-size:.64rem;
-    }
-    .liq{font-size:.60rem;color:var(--muted)}
-    .empty{
-      padding:10px 6px 14px;
-      color:var(--muted);
-      font-size:.68rem;
-      text-align:center;
-    }
-    .error{
-      padding:10px 12px 12px;
-      border:1px solid rgba(239,68,68,.35);
-      background:rgba(239,68,68,.08);
-      border-radius:12px;
-      color:#fecaca;
-      font-size:.68rem;
-      line-height:1.35;
-      margin-bottom:10px;
-      white-space:pre-wrap;
-      word-break:break-word;
-    }
+/* ---------- Zones ---------- */
+.zones{display:flex;flex-direction:column;gap:14px}
+.zone{border-radius:18px;border:1px solid var(--line);overflow:hidden}
+.zone-head{
+  padding:14px 16px;
+  background:linear-gradient(180deg,#0f1420,#0b0f19);
+  border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.zone-title{font-weight:900;letter-spacing:1px}
+.zone-sub{font-size:.7rem;color:var(--muted)}
+.zone-body{padding:12px}
 
-    footer{margin-top:18px;font-size:.62rem;color:var(--muted);text-align:center;line-height:1.4}
+/* ---------- Card ---------- */
+.card{
+  background:linear-gradient(180deg,#121722,#0f1420);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:14px;
+  margin-bottom:12px;
+}
+.card-top{
+  display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+}
+.symbol{
+  font-size:1.05rem;font-weight:900;color:var(--gold);
+}
+.score{
+  font-size:1.2rem;font-weight:900;
+}
 
-    /* Modal */
-    .modal-backdrop{
-      position:fixed;inset:0;background:rgba(0,0,0,.55);
-      display:none;align-items:center;justify-content:center;padding:18px;
-      z-index:999;
-    }
-    .modal{
-      width:min(820px,100%);
-      background:var(--panel);
-      border:1px solid var(--line);
-      border-radius:18px;
-      overflow:hidden;
-      box-shadow:0 20px 60px rgba(0,0,0,.4);
-    }
-    .modal-head{
-      background:var(--panel2);
-      border-bottom:1px solid var(--line);
-      padding:14px 16px;
-      display:flex;justify-content:space-between;align-items:center;gap:10px
-    }
-    .modal-title{font-weight:900}
-    .modal-sub{font-size:.68rem;color:var(--muted);margin-top:2px}
-    .modal-close{
-      cursor:pointer;border:1px solid var(--line);background:#0b1220;color:var(--text);
-      padding:6px 10px;border-radius:10px;font-size:.65rem;
-    }
-    .modal-body{padding:14px 16px}
-    .tl-item{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px 12px;
-      margin-bottom:10px;
-      background:#101827;
-    }
-    .tl-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-    .tl-evt{font-size:.72rem;font-weight:900}
-    .tl-time{font-size:.62rem;color:var(--muted)}
-    .tl-detail{margin-top:6px;font-size:.68rem;color:#d1d5db;line-height:1.35}
-    .loading{font-size:.7rem;color:var(--muted)}
-  </style>
+/* ---------- Consensus Badge ---------- */
+.badge{
+  font-size:.62rem;
+  font-weight:900;
+  padding:4px 8px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  display:inline-flex;align-items:center;
+}
+.badge.EARLY{color:var(--early)}
+.badge.FORMING{color:var(--forming)}
+.badge.STABLE{color:var(--stable)}
+.badge.CORE{color:var(--core)}
+
+/* ---------- Progress Bar ---------- */
+.progress-wrap{
+  margin-top:10px;
+}
+.progress-label{
+  font-size:.6rem;color:var(--muted);
+  display:flex;justify-content:space-between;
+}
+.progress{
+  height:6px;border-radius:999px;
+  background:#0b1220;border:1px solid var(--line);
+  overflow:hidden;margin-top:4px;
+}
+.progress-bar{
+  height:100%;
+  background:linear-gradient(90deg,#38bdf8,#a78bfa,#fbbf24);
+  width:0%;
+}
+
+/* ---------- Narrative ---------- */
+.narrative{
+  margin-top:10px;
+  font-size:.7rem;color:#d1d5db;
+  line-height:1.35;
+}
+
+/* ---------- Actions ---------- */
+.actions{
+  margin-top:10px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.btn{
+  border:1px solid var(--line);
+  background:#0b1220;
+  color:var(--text);
+  padding:7px 10px;
+  border-radius:10px;
+  font-size:.62rem;
+  cursor:pointer;
+}
+.liq{font-size:.6rem;color:var(--muted)}
+
+.empty{font-size:.7rem;color:var(--muted);padding:12px;text-align:center}
+
+/* ---------- Modal (Timeline) ---------- */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);
+  display:none;align-items:center;justify-content:center;padding:18px;
+  z-index:999;
+}
+.modal{
+  width:min(820px,100%);
+  max-height:85vh;
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:18px;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.modal-head{
+  padding:14px 16px;
+  background:var(--panel2);
+  border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;
+}
+.modal-body{padding:14px 16px;overflow-y:auto}
+.modal-close{
+  border:1px solid var(--line);
+  background:#0b1220;
+  color:var(--text);
+  border-radius:10px;
+  font-size:.65rem;
+  padding:6px 10px;
+  cursor:pointer;
+}
+.tl-item{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:10px;margin-bottom:8px;
+  background:#101827;
+}
+.tl-top{display:flex;justify-content:space-between}
+.tl-evt{font-size:.7rem;font-weight:900}
+.tl-time{font-size:.6rem;color:var(--muted)}
+.tl-detail{margin-top:6px;font-size:.68rem;color:#d1d5db}
+
+</style>
 </head>
 
 <body>
-  <div class="container">
-    <header>
-      <h1>🍌 Banana Radar</h1>
-      <div class="subtitle">Consensus Radar for New Tokens</div>
-    </header>
+<div class="container">
 
-    <!-- Radar Summary Bar -->
-    <div class="radar-bar">
-      <div class="pill"><span class="dot"></span> SYSTEM: ACTIVE</div>
+<header>
+  <h1>🍌 Banana Radar</h1>
+  <div class="subtitle">Consensus Radar for New Tokens</div>
+</header>
 
-      <div class="counts">
-        <div class="pill"><span class="count-dot"></span> CORE: <span class="value" id="count-core">0</span></div>
-        <div class="pill"><span class="count-dot"></span> STABLE: <span class="value" id="count-stable">0</span></div>
-        <div class="pill"><span class="count-dot"></span> EARLY: <span class="value" id="count-early">0</span></div>
-      </div>
-
-      <div class="timer">
-        <div class="pill">Last: <span class="value" id="last-update">--</span></div>
-        <div class="pill">Next scan: <span class="value" id="next-scan">10s</span></div>
-        <div class="pill">Observed: <span class="value" id="observed-count">--</span></div>
-      </div>
-    </div>
-
-    <div class="zones">
-
-      <div class="zone">
-        <div class="zone-head">
-          <div class="zone-title">
-            <span class="big">CORE ZONE</span>
-            <span class="sub">Sustained Consensus</span>
-          </div>
-          <div class="zone-meta" id="core-meta"><span class="meta-dot"></span> —</div>
-        </div>
-        <div class="zone-body" id="core-list"></div>
-      </div>
-
-      <div class="zone">
-        <div class="zone-head">
-          <div class="zone-title">
-            <span class="big">STABLE ZONE</span>
-            <span class="sub">Emerging Stability</span>
-          </div>
-          <div class="zone-meta" id="stable-meta"><span class="meta-dot"></span> —</div>
-        </div>
-        <div class="zone-body" id="stable-list"></div>
-      </div>
-
-      <div class="zone">
-        <div class="zone-head">
-          <div class="zone-title">
-            <span class="big">EARLY ZONE</span>
-            <span class="sub">Under Observation</span>
-          </div>
-          <div class="zone-meta" id="early-meta"><span class="meta-dot"></span> —</div>
-        </div>
-        <div class="zone-body" id="early-list"></div>
-      </div>
-
-    </div>
-
-    <footer>
-      Signals are formed, tested, and invalidated over time.<br/>
-      This system does not predict outcomes.
-    </footer>
+<div class="zones">
+  <div class="zone">
+    <div class="zone-head"><div>CORE ZONE</div><div class="zone-sub">Sustained consensus</div></div>
+    <div class="zone-body" id="core-list"></div>
   </div>
-
-  <!-- Modal -->
-  <div class="modal-backdrop" id="modal-backdrop">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div class="modal-head">
-        <div>
-          <div class="modal-title" id="modal-title">Timeline</div>
-          <div class="modal-sub" id="modal-sub">—</div>
-        </div>
-        <button class="modal-close" id="modal-close">Close</button>
-      </div>
-      <div class="modal-body">
-        <div id="modal-content" class="loading">Loading…</div>
-      </div>
-    </div>
+  <div class="zone">
+    <div class="zone-head"><div>STABLE ZONE</div><div class="zone-sub">Emerging stability</div></div>
+    <div class="zone-body" id="stable-list"></div>
   </div>
+  <div class="zone">
+    <div class="zone-head"><div>EARLY ZONE</div><div class="zone-sub">Under observation</div></div>
+    <div class="zone-body" id="early-list"></div>
+  </div>
+</div>
+
+</div>
+
+<!-- Timeline Modal -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <div id="modal-title">Timeline</div>
+        <div id="modal-sub" style="font-size:.65rem;color:var(--muted)"></div>
+      </div>
+      <button class="modal-close" onclick="closeTimeline()">Close</button>
+    </div>
+    <div class="modal-body" id="modal-content">Loading…</div>
+  </div>
+</div>
 
 <script>
-  // -------- Config --------
-  const LIMIT_CORE = 5;
-  const LIMIT_STABLE = 6;
-  const LIMIT_EARLY = 8;
+function minutesObserved(item){
+  const base = item.first_passed_at || item.created_at;
+  if(!base) return 0;
+  return Math.floor((Date.now()-new Date(base))/60000);
+}
+function tierOf(item){
+  if(item.core_confirmed) return "CORE";
+  if(item.stable_confirmed) return "STABLE";
+  if(item.forming_confirmed) return "FORMING";
+  return "EARLY";
+}
+function renderCard(item){
+  const mins = minutesObserved(item);
+  const pct = Math.min(100, Math.round(mins/120*100));
+  const tier = tierOf(item);
 
-  const REFRESH_MS = 10000;
-  let secondsLeft = Math.floor(REFRESH_MS / 1000);
-
-  // -------- Helpers --------
-  function fmtTime(ts){
-    try{ return new Date(ts).toLocaleString(); }catch(e){ return ts; }
-  }
-
-  function observedMinutes(item){
-    const base = item.first_passed_at || item.created_at;
-    if (!base) return 0;
-    const mins = Math.max(0, Math.floor((Date.now() - new Date(base).getTime()) / 60000));
-    return mins;
-  }
-
-  function humanDurationFromMinutes(mins){
-    if (mins < 60) return `${mins} mins`;
-    const hrs = mins / 60;
-    if (hrs < 48) return `${hrs.toFixed(1)} hours`;
-    const days = hrs / 24;
-    return `${days.toFixed(1)} days`;
-  }
-
-  function tierOf(item){
-    if (item.core_confirmed) return "CORE";
-    if (item.stable_confirmed) return "STABLE";
-    if (item.forming_confirmed) return "FORMING";
-    return "EARLY";
-  }
-
-  function renderEmpty(text){
-    return `<div class="empty">${text}</div>`;
-  }
-
-  function renderError(text){
-    return `<div class="error">${text}</div>`;
-  }
-
-  function setZoneMeta(coreN, stableN, earlyN, total){
-    document.getElementById("core-meta").innerText = `${coreN} active`;
-    document.getElementById("stable-meta").innerText = `${stableN} active`;
-    document.getElementById("early-meta").innerText = `${earlyN} active`;
-
-    document.getElementById("count-core").innerText = coreN;
-    document.getElementById("count-stable").innerText = stableN;
-    document.getElementById("count-early").innerText = earlyN;
-
-    document.getElementById("observed-count").innerText = (total ?? (coreN + stableN + earlyN));
-  }
-
-  function renderCard(item, rank){
-    const mins = observedMinutes(item);
-    const duration = humanDurationFromMinutes(mins);
-    const tier = tierOf(item);
-
-    const smartTag = (item.smart_money_count ?? 0) > 0
-      ? `<span class="tag">🧠 Smart: ${item.smart_money_count}</span>`
-      : `<span class="tag">🐋 Whale-only</span>`;
-
-    const durationTag = `<span class="tag">⏱ ${duration}</span>`;
-    const tierTag = `<span class="tag">🏷 ${tier}</span>`;
-
-    return `
-      <div class="card">
-        <div class="row-top">
-          <div class="left">
-            <div class="rank">${rank}</div>
-            <div class="token">
-              <div class="symbol">$${item.symbol ?? "???"}</div>
-              <div class="mini">
-                ${durationTag}
-                ${tierTag}
-                ${smartTag}
-              </div>
-            </div>
-          </div>
-          <div class="score">${Number(item.banana_score ?? 0).toFixed(2)}</div>
-        </div>
-
-        <div class="narrative">"${item.narrative_log ?? "—"}"</div>
-
-        <div class="actions">
-          <button class="btn" onclick="openTimeline('${item.ca}','${item.symbol ?? ""}')">View Timeline</button>
-          <div class="liq">💧 LIQ: $${Math.round(item.liq ?? 0).toLocaleString()}</div>
-        </div>
+  return `
+  <div class="card">
+    <div class="card-top">
+      <div>
+        <div class="symbol">$${item.symbol||"???"}</div>
+        <span class="badge ${tier}">${tier}</span>
       </div>
-    `;
+      <div class="score">${Number(item.banana_score||0).toFixed(2)}</div>
+    </div>
+
+    <div class="progress-wrap" title="Observed ${mins} mins">
+      <div class="progress-label">
+        <span>${mins} mins observed</span>
+        <span>${pct}%</span>
+      </div>
+      <div class="progress"><div class="progress-bar" style="width:${pct}%"></div></div>
+    </div>
+
+    <div class="narrative">"${item.narrative_log||"—"}"</div>
+
+    <div class="actions">
+      <button class="btn" onclick="openTimeline('${item.ca}','${item.symbol}')">View Timeline</button>
+      <div class="liq">💧 $${Math.round(item.liq||0).toLocaleString()}</div>
+    </div>
+  </div>`;
+}
+
+async function loadFeed(){
+  const r = await fetch("/api/feed?limit=60",{cache:"no-store"});
+  const js = await r.json();
+  if(!js.ok){
+    document.getElementById("early-list").innerHTML="<div class='empty'>Feed error</div>";
+    return;
   }
+  const core=js.zones.core||[], stable=js.zones.stable||[], early=js.zones.early||[];
+  document.getElementById("core-list").innerHTML = core.length?core.map(renderCard).join(""):"<div class='empty'>No CORE yet</div>";
+  document.getElementById("stable-list").innerHTML = stable.length?stable.map(renderCard).join(""):"<div class='empty'>No STABLE yet</div>";
+  document.getElementById("early-list").innerHTML = early.length?early.map(renderCard).join(""):"<div class='empty'>No EARLY signals</div>";
+}
 
-  // -------- API calls --------
-  async function loadThreeZoneFeed(){
-    const r = await fetch("/api/feed?limit=50", { cache: "no-store" });
-    const js = await r.json();
-
-    if (!js.ok){
-      // 把错误渲染到三个区，避免“看起来像没数据”
-      const err = `Feed error.\n${js.error || "unknown"}\n${js.details || ""}`;
-      document.getElementById("core-list").innerHTML = renderError(err);
-      document.getElementById("stable-list").innerHTML = renderError(err);
-      document.getElementById("early-list").innerHTML = renderError(err);
-      document.getElementById("last-update").innerText = "feed error";
-      setZoneMeta(0,0,0,0);
-      return;
-    }
-
-    const coreAll = js.zones?.core || [];
-    const stableAll = js.zones?.stable || [];
-    const earlyAll = js.zones?.early || [];
-
-    const coreList = coreAll.slice(0, LIMIT_CORE);
-    const stableList = stableAll.slice(0, LIMIT_STABLE);
-    const earlyList = earlyAll.slice(0, LIMIT_EARLY);
-
-    document.getElementById("core-list").innerHTML =
-      coreList.length ? coreList.map((x, i) => renderCard(x, i+1)).join("")
-                      : renderEmpty("No sustained consensus yet. Monitoring CORE candidates…");
-
-    document.getElementById("stable-list").innerHTML =
-      stableList.length ? stableList.map((x, i) => renderCard(x, i+1)).join("")
-                        : renderEmpty("No stable consensus yet. Signals need time to stabilize…");
-
-    document.getElementById("early-list").innerHTML =
-      earlyList.length ? earlyList.map((x, i) => renderCard(x, i+1)).join("")
-                       : renderEmpty("No early signals right now. Hunter is scanning…");
-
-    setZoneMeta(coreAll.length, stableAll.length, earlyAll.length, js.counts?.total ?? (coreAll.length + stableAll.length + earlyAll.length));
-    document.getElementById("last-update").innerText = "just now";
+async function openTimeline(ca,symbol){
+  document.getElementById("modal-title").innerText=`Timeline · $${symbol||""}`;
+  document.getElementById("modal-sub").innerText=ca;
+  document.getElementById("modal-content").innerText="Loading…";
+  document.getElementById("modal-backdrop").style.display="flex";
+  const r=await fetch(`/api/timeline?ca=${encodeURIComponent(ca)}&limit=100`);
+  const js=await r.json();
+  if(!js.ok||!js.timeline.length){
+    document.getElementById("modal-content").innerText="No timeline yet.";
+    return;
   }
+  document.getElementById("modal-content").innerHTML=js.timeline.map(e=>`
+    <div class="tl-item">
+      <div class="tl-top">
+        <div class="tl-evt">${e.event}</div>
+        <div class="tl-time">${new Date(e.created_at).toLocaleString()}</div>
+      </div>
+      <div class="tl-detail">${JSON.stringify(e.payload||{})}</div>
+    </div>`).join("");
+}
+function closeTimeline(){
+  document.getElementById("modal-backdrop").style.display="none";
+}
 
-  // -------- Next scan countdown --------
-  function tick(){
-    secondsLeft -= 1;
-    if (secondsLeft <= 0) secondsLeft = Math.floor(REFRESH_MS / 1000);
-    document.getElementById("next-scan").innerText = `${secondsLeft}s`;
-  }
-
-  // -------- Timeline Modal --------
-  const backdrop = document.getElementById("modal-backdrop");
-  document.getElementById("modal-close").onclick = () => closeTimeline();
-  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeTimeline(); });
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeTimeline(); });
-
-  function eventTitle(evt){
-    const map = {
-      "FIRST_AUDIT_DONE": "Initial audit completed",
-      "FIRST_PASSED": "Passed initial threshold",
-      "SMART_MONEY_DETECTED": "Smart money detected",
-      "SCORE_UPDATE": "Score updated",
-      "CONSENSUS_FORMING": "Consensus forming",
-      "CONSENSUS_STABLE": "Consensus stabilized",
-      "CONSENSUS_CORE": "Core consensus established"
-    };
-    return map[evt] || evt;
-  }
-
-  function eventDetail(evt, payload){
-    payload = payload || {};
-    if (evt === "FIRST_AUDIT_DONE"){
-      return `Score ${payload.score ?? "—"} · Liquidity $${Math.round(payload.liq_usd ?? 0).toLocaleString()} · Smart ${payload.smart_money_count ?? 0}`;
-    }
-    if (evt === "FIRST_PASSED"){
-      return `Score ${payload.score ?? "—"}`;
-    }
-    if (evt === "SMART_MONEY_DETECTED"){
-      return `Smart wallets: ${payload.smart_money_count ?? "—"}`;
-    }
-    if (evt === "SCORE_UPDATE"){
-      const prev = payload.previous_score ?? "—";
-      const now = payload.score ?? "—";
-      const delta = payload.delta ?? "—";
-      return `Score ${prev} → ${now} (${delta >= 0 ? "+" : ""}${delta})`;
-    }
-    if (evt === "CONSENSUS_FORMING" || evt === "CONSENSUS_STABLE" || evt === "CONSENSUS_CORE"){
-      return `Sustained for ${payload.minutes_sustained ?? "—"} minutes · Tier: ${payload.tier ?? "—"}`;
-    }
-    return JSON.stringify(payload);
-  }
-
-  async function openTimeline(ca, symbol){
-    document.getElementById("modal-title").innerText = `Timeline · $${symbol || "???"}`;
-    document.getElementById("modal-sub").innerText = ca;
-    document.getElementById("modal-content").innerHTML = `<div class="loading">Loading…</div>`;
-    backdrop.style.display = "flex";
-
-    try{
-      const r = await fetch(`/api/timeline?ca=${encodeURIComponent(ca)}&limit=50`, { cache: "no-store" });
-      const js = await r.json();
-
-      if (!js.ok){
-        document.getElementById("modal-content").innerHTML =
-          `<div class="loading">Failed to load timeline: ${js.error || "unknown error"}${js.details ? "<br/><br/>" + js.details : ""}</div>`;
-        return;
-      }
-
-      const data = js.timeline || [];
-      if (!data.length){
-        document.getElementById("modal-content").innerHTML =
-          `<div class="loading">No timeline yet. (Brain will write events after next audits.)</div>`;
-        return;
-      }
-
-      const html = data.map(row => `
-        <div class="tl-item">
-          <div class="tl-top">
-            <div class="tl-evt">${eventTitle(row.event)}</div>
-            <div class="tl-time">${fmtTime(row.created_at)}</div>
-          </div>
-          <div class="tl-detail">${eventDetail(row.event, row.payload)}</div>
-        </div>
-      `).join("");
-
-      document.getElementById("modal-content").innerHTML = html;
-
-    } catch (e){
-      console.error(e);
-      document.getElementById("modal-content").innerHTML =
-        `<div class="loading">Failed to load timeline (network error).</div>`;
-    }
-  }
-
-  function closeTimeline(){
-    backdrop.style.display = "none";
-  }
-
-  // -------- Boot --------
-  (async () => {
-    // 先跑一次
-    await loadThreeZoneFeed();
-
-    // 倒计时
-    document.getElementById("next-scan").innerText = `${secondsLeft}s`;
-    setInterval(tick, 1000);
-
-    // 定时刷新
-    setInterval(async () => {
-      secondsLeft = Math.floor(REFRESH_MS / 1000);
-      await loadThreeZoneFeed();
-    }, REFRESH_MS);
-  })();
+loadFeed();
+setInterval(loadFeed,10000);
 </script>
-
 </body>
 </html>
