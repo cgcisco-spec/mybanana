@@ -280,35 +280,40 @@ async function initSupabaseFromConfig() {
   }
 
   async function loadThreeZoneFeed(){
-    // 一次性取更多数据，然后前端分区（避免三次请求）
-    // 这里取 30 条 passed，基本够分区了
-    const { data } = await sb
-      .from("pending_pool")
-      .select("ca,symbol,liq,banana_score,smart_money_count,narrative_log,created_at,first_passed_at,forming_confirmed,stable_confirmed,core_confirmed")
-      .eq("status","passed")
-      .order("banana_score",{ascending:false})
-      .limit(30);
+  // 一次请求拿到三分区数据
+  const r = await fetch("/api/feed?limit=50", { cache: "no-store" });
+  const js = await r.json();
 
-    const coreList = [];
-    const stableList = [];
-    const earlyList = [];
-
-    (data || []).forEach(item => {
-      const z = zoneOf(item);
-      if (z === "CORE" && coreList.length < LIMIT_CORE) coreList.push(item);
-      else if (z === "STABLE" && stableList.length < LIMIT_STABLE) stableList.push(item);
-      else if (z === "EARLY" && earlyList.length < LIMIT_EARLY) earlyList.push(item);
-    });
-
-    document.getElementById("core-list").innerHTML = coreList.map(renderCard).join("") || `<div class="loading">No CORE tokens yet.</div>`;
-    document.getElementById("stable-list").innerHTML = stableList.map(renderCard).join("") || `<div class="loading">No STABLE tokens yet.</div>`;
-    document.getElementById("early-list").innerHTML = earlyList.map(renderCard).join("") || `<div class="loading">No EARLY tokens yet.</div>`;
-
-    setMetaCounts(coreList.length, stableList.length, earlyList.length);
-
-    document.getElementById("last-update").innerText = "Last Evaluation: just now";
-    document.getElementById("observed-count").innerText = "Tokens Observed: " + (data?.length || 0);
+  if (!js.ok) {
+    throw new Error(js.error || "Failed to load /api/feed");
   }
+
+  // 这里可以在前端再裁剪每个 zone 显示数量
+  const coreList = (js.zones.core || []).slice(0, LIMIT_CORE);
+  const stableList = (js.zones.stable || []).slice(0, LIMIT_STABLE);
+  const earlyList = (js.zones.early || []).slice(0, LIMIT_EARLY);
+
+  document.getElementById("core-list").innerHTML =
+    coreList.length ? coreList.map((x, i) => renderCard(x, i+1)).join("")
+                    : renderEmpty("No sustained consensus yet. Monitoring CORE candidates…");
+
+  document.getElementById("stable-list").innerHTML =
+    stableList.length ? stableList.map((x, i) => renderCard(x, i+1)).join("")
+                      : renderEmpty("No stable consensus yet. Signals need time to stabilize…");
+
+  document.getElementById("early-list").innerHTML =
+    earlyList.length ? earlyList.map((x, i) => renderCard(x, i+1)).join("")
+                     : renderEmpty("No early signals right now. Hunter is scanning…");
+
+  // Radar Summary Bar + Zone meta
+  setZoneMeta(coreList.length, stableList.length, earlyList.length);
+
+  // 顶部 observed 总数（用 total 更真实）
+  document.getElementById("observed-count").innerText = js.counts?.total ?? (coreList.length + stableList.length + earlyList.length);
+
+  // last update 显示：just now / 或者用 js.ts 更“系统”
+  document.getElementById("last-update").innerText = "just now";
+}
 
   // ===== Timeline Modal =====
   const backdrop = document.getElementById("modal-backdrop");
