@@ -5,94 +5,173 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Banana Radar · v1 Alpha</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      --bg:#0b0e13; --panel:#121722; --panel2:#0f1420;
-      --line:#1f2937; --muted:#6b7280; --text:#e5e7eb;
-      --gold:#fbbf24; --good:#22c55e;
+      --bg:#0b0e13;
+      --panel:#121722;
+      --panel2:#0f1420;
+      --line:#1f2937;
+      --muted:#6b7280;
+      --text:#e5e7eb;
+      --gold:#fbbf24;
+      --good:#22c55e;
+      --soft:#9ca3af;
     }
     *{box-sizing:border-box}
     body{margin:0;font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text)}
     .container{max-width:980px;margin:0 auto;padding:24px}
 
-    header{margin-bottom:18px}
-    h1{margin:0;font-size:1.8rem;font-weight:700}
-    .subtitle{font-size:.78rem;color:var(--muted);margin-top:4px}
+    header{margin-bottom:12px}
+    h1{margin:0;font-size:1.8rem;font-weight:900;display:flex;align-items:center;gap:10px;letter-spacing:.3px}
+    .subtitle{font-size:.78rem;color:var(--muted);margin-top:6px}
 
-    .status-bar{
-      background:var(--panel2);border:1px solid var(--line);
-      border-radius:12px;padding:12px 16px;font-size:.72rem;
-      display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;
-      color:var(--muted);margin-bottom:18px;
-    }
-    .status-pill{
-      display:inline-flex;align-items:center;gap:8px;
-      padding:6px 10px;border-radius:999px;background:#0b1220;border:1px solid var(--line);
+    /* Radar Summary Bar */
+    .radar-bar{
+      margin:14px 0 18px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:
+        radial-gradient(1200px 260px at 18% 50%, rgba(251,191,36,.08), rgba(0,0,0,0)),
+        radial-gradient(900px 260px at 82% 50%, rgba(34,197,94,.06), rgba(0,0,0,0)),
+        linear-gradient(180deg, rgba(15,20,32,.95), rgba(12,16,26,.95));
+      display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
       color:var(--muted);
+      font-size:.72rem;
+    }
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:6px 10px;border-radius:999px;
+      background:#0b1220;border:1px solid var(--line);
+      color:var(--muted);
+      white-space:nowrap;
     }
     .dot{width:8px;height:8px;border-radius:999px;background:var(--good);display:inline-block}
+    .count-dot{width:6px;height:6px;border-radius:999px;background:#3b82f6;display:inline-block;opacity:.85}
+    .counts{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .timer{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .value{color:var(--text);font-weight:900}
 
-    /* Layout */
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:16px;
+    /* Zones */
+    .zones{display:flex;flex-direction:column;gap:14px}
+    .zone{
+      border-radius:18px;
+      border:1px solid var(--line);
+      overflow:hidden;
+      background:rgba(18,23,34,.55);
     }
-    @media (min-width: 980px){
-      .grid{ grid-template-columns: 1fr 1fr 1fr; }
+    .zone-head{
+      padding:14px 16px;
+      background:
+        radial-gradient(1200px 220px at 20% 50%, rgba(251,191,36,.08), rgba(0,0,0,0)),
+        radial-gradient(900px 220px at 80% 50%, rgba(34,197,94,.05), rgba(0,0,0,0)),
+        linear-gradient(180deg, rgba(15,20,32,.95), rgba(12,16,26,.95));
+      border-bottom:1px solid var(--line);
+      display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
     }
-
-    .col{
-      background:transparent;
-    }
-
-    .col-head{
-      display:flex;justify-content:space-between;align-items:flex-end;gap:10px;
-      margin-bottom:10px;
-    }
-    .col-title{
-      font-size:.78rem;
+    .zone-title{
+      display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+      font-weight:900;
       letter-spacing:1px;
-      color:var(--muted);
       text-transform:uppercase;
     }
-    .col-meta{
+    .zone-title .big{font-size:.95rem;color:var(--text)}
+    .zone-title .sub{font-size:.70rem;color:var(--muted);font-weight:600;letter-spacing:.4px;text-transform:none}
+    .zone-meta{
       font-size:.62rem;color:var(--muted);
       border:1px solid var(--line);
       background:#0b1220;
-      padding:5px 8px;border-radius:999px;
+      padding:6px 10px;border-radius:999px;
+      display:flex;gap:10px;align-items:center;
     }
+    .meta-dot{width:6px;height:6px;border-radius:999px;background:#3b82f6;display:inline-block;opacity:.8}
+    .zone-body{padding:12px 12px 4px}
 
+    /* Cards */
     .card{
-      background:var(--panel);border:1px solid var(--line);
-      border-radius:16px;padding:14px;margin-bottom:12px;
+      background:linear-gradient(180deg, rgba(18,23,34,.9), rgba(15,20,32,.9));
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:13px 14px;
+      margin-bottom:10px;
     }
-    .card-header{display:flex;justify-content:space-between;align-items:center;gap:12px}
-    .symbol{font-size:1.02rem;font-weight:700;color:var(--gold)}
-    .score{font-size:1.28rem;font-weight:700}
-
-    .timeline-row{
-      font-size:.68rem;color:var(--muted);margin-top:6px;
-      display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap
+    .row-top{
+      display:flex;justify-content:space-between;align-items:center;gap:12px;
     }
-    .badges{margin-top:9px;display:flex;gap:7px;flex-wrap:wrap}
-    .badge{
-      display:inline-block;font-size:.60rem;padding:4px 8px;border-radius:999px;
-      background:#1b2433;border:1px solid var(--line);color:#cbd5f5;
+    .left{display:flex;align-items:center;gap:10px;min-width:0}
+    .rank{
+      width:26px;height:26px;border-radius:10px;
+      display:flex;align-items:center;justify-content:center;
+      background:#0b1220;border:1px solid var(--line);
+      font-size:.72rem;color:var(--soft);font-weight:900;
+      flex:0 0 auto;
     }
-    .narrative{margin-top:9px;font-size:.70rem;color:#d1d5db;line-height:1.35}
-
-    .card-actions{margin-top:11px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-    .btn-link{
-      cursor:pointer;border:1px solid var(--line);background:#0b1220;color:var(--text);
-      padding:7px 10px;border-radius:10px;font-size:.64rem;text-decoration:none;
+    .token{min-width:0}
+    .symbol{
+      font-weight:900;
+      color:var(--gold);
+      font-size:1.02rem;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .mini{
+      margin-top:3px;
+      font-size:.62rem;
+      color:var(--muted);
+      display:flex;gap:10px;flex-wrap:wrap;
+    }
+    .tag{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:3px 8px;border-radius:999px;
+      background:#0b1220;border:1px solid var(--line);
+      color:var(--muted);
+    }
+    .score{
+      font-weight:900;
+      font-size:1.20rem;
+      flex:0 0 auto;
+      color:var(--text);
+    }
+    .narrative{
+      margin-top:9px;
+      font-size:.70rem;color:#d1d5db;line-height:1.35;
+      opacity:.95;
+    }
+    .actions{
+      margin-top:10px;
+      display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+    }
+    .btn{
+      cursor:pointer;
+      border:1px solid var(--line);
+      background:#0b1220;
+      color:var(--text);
+      padding:7px 10px;
+      border-radius:10px;
+      font-size:.64rem;
     }
     .liq{font-size:.60rem;color:var(--muted)}
+    .empty{
+      padding:10px 6px 14px;
+      color:var(--muted);
+      font-size:.68rem;
+      text-align:center;
+    }
+    .error{
+      padding:10px 12px 12px;
+      border:1px solid rgba(239,68,68,.35);
+      background:rgba(239,68,68,.08);
+      border-radius:12px;
+      color:#fecaca;
+      font-size:.68rem;
+      line-height:1.35;
+      margin-bottom:10px;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
 
-    footer{margin-top:28px;font-size:.62rem;color:var(--muted);text-align:center;line-height:1.4}
+    footer{margin-top:18px;font-size:.62rem;color:var(--muted);text-align:center;line-height:1.4}
 
     /* Modal */
     .modal-backdrop{
@@ -102,15 +181,19 @@
     }
     .modal{
       width:min(820px,100%);
-      background:var(--panel);border:1px solid var(--line);
-      border-radius:18px;overflow:hidden;
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:18px;
+      overflow:hidden;
       box-shadow:0 20px 60px rgba(0,0,0,.4);
     }
     .modal-head{
-      background:var(--panel2);border-bottom:1px solid var(--line);
-      padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px
+      background:var(--panel2);
+      border-bottom:1px solid var(--line);
+      padding:14px 16px;
+      display:flex;justify-content:space-between;align-items:center;gap:10px
     }
-    .modal-title{font-weight:700}
+    .modal-title{font-weight:900}
     .modal-sub{font-size:.68rem;color:var(--muted);margin-top:2px}
     .modal-close{
       cursor:pointer;border:1px solid var(--line);background:#0b1220;color:var(--text);
@@ -118,11 +201,14 @@
     }
     .modal-body{padding:14px 16px}
     .tl-item{
-      border:1px solid var(--line);border-radius:14px;padding:12px 12px;margin-bottom:10px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px 12px;
+      margin-bottom:10px;
       background:#101827;
     }
     .tl-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-    .tl-evt{font-size:.72rem;font-weight:700}
+    .tl-evt{font-size:.72rem;font-weight:900}
     .tl-time{font-size:.62rem;color:var(--muted)}
     .tl-detail{margin-top:6px;font-size:.68rem;color:#d1d5db;line-height:1.35}
     .loading{font-size:.7rem;color:var(--muted)}
@@ -136,37 +222,58 @@
       <div class="subtitle">Consensus Radar for New Tokens</div>
     </header>
 
-    <div class="status-bar">
-      <div class="status-pill"><span class="dot"></span> SYSTEM: ACTIVE</div>
-      <div class="status-pill" id="last-update">Last Evaluation: --</div>
-      <div class="status-pill" id="observed-count">Tokens Observed: --</div>
+    <!-- Radar Summary Bar -->
+    <div class="radar-bar">
+      <div class="pill"><span class="dot"></span> SYSTEM: ACTIVE</div>
+
+      <div class="counts">
+        <div class="pill"><span class="count-dot"></span> CORE: <span class="value" id="count-core">0</span></div>
+        <div class="pill"><span class="count-dot"></span> STABLE: <span class="value" id="count-stable">0</span></div>
+        <div class="pill"><span class="count-dot"></span> EARLY: <span class="value" id="count-early">0</span></div>
+      </div>
+
+      <div class="timer">
+        <div class="pill">Last: <span class="value" id="last-update">--</span></div>
+        <div class="pill">Next scan: <span class="value" id="next-scan">10s</span></div>
+        <div class="pill">Observed: <span class="value" id="observed-count">--</span></div>
+      </div>
     </div>
 
-    <!-- 3-zone feed -->
-    <div class="grid">
-      <div class="col">
-        <div class="col-head">
-          <div class="col-title">CORE</div>
-          <div class="col-meta" id="core-meta">—</div>
+    <div class="zones">
+
+      <div class="zone">
+        <div class="zone-head">
+          <div class="zone-title">
+            <span class="big">CORE ZONE</span>
+            <span class="sub">Sustained Consensus</span>
+          </div>
+          <div class="zone-meta" id="core-meta"><span class="meta-dot"></span> —</div>
         </div>
-        <div id="core-list"></div>
+        <div class="zone-body" id="core-list"></div>
       </div>
 
-      <div class="col">
-        <div class="col-head">
-          <div class="col-title">STABLE</div>
-          <div class="col-meta" id="stable-meta">—</div>
+      <div class="zone">
+        <div class="zone-head">
+          <div class="zone-title">
+            <span class="big">STABLE ZONE</span>
+            <span class="sub">Emerging Stability</span>
+          </div>
+          <div class="zone-meta" id="stable-meta"><span class="meta-dot"></span> —</div>
         </div>
-        <div id="stable-list"></div>
+        <div class="zone-body" id="stable-list"></div>
       </div>
 
-      <div class="col">
-        <div class="col-head">
-          <div class="col-title">EARLY</div>
-          <div class="col-meta" id="early-meta">—</div>
+      <div class="zone">
+        <div class="zone-head">
+          <div class="zone-title">
+            <span class="big">EARLY ZONE</span>
+            <span class="sub">Under Observation</span>
+          </div>
+          <div class="zone-meta" id="early-meta"><span class="meta-dot"></span> —</div>
         </div>
-        <div id="early-list"></div>
+        <div class="zone-body" id="early-list"></div>
       </div>
+
     </div>
 
     <footer>
@@ -192,28 +299,15 @@
   </div>
 
 <script>
-  // ====== Fill these two ======
-  let sb = null;
-
-async function initSupabaseFromConfig() {
-  const r = await fetch("/api/config", { cache: "no-store" });
-  const cfg = await r.json();
-
-  if (!cfg.ok) {
-    throw new Error(cfg.error || "Failed to load /api/config");
-  }
-
-  sb = supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
-}
-
-  // ===========================
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  // Per-zone max items
+  // -------- Config --------
   const LIMIT_CORE = 5;
-  const LIMIT_STABLE = 5;
-  const LIMIT_EARLY = 6;
+  const LIMIT_STABLE = 6;
+  const LIMIT_EARLY = 8;
 
+  const REFRESH_MS = 10000;
+  let secondsLeft = Math.floor(REFRESH_MS / 1000);
+
+  // -------- Helpers --------
   function fmtTime(ts){
     try{ return new Date(ts).toLocaleString(); }catch(e){ return ts; }
   }
@@ -225,98 +319,128 @@ async function initSupabaseFromConfig() {
     return mins;
   }
 
-  function zoneOf(item){
+  function humanDurationFromMinutes(mins){
+    if (mins < 60) return `${mins} mins`;
+    const hrs = mins / 60;
+    if (hrs < 48) return `${hrs.toFixed(1)} hours`;
+    const days = hrs / 24;
+    return `${days.toFixed(1)} days`;
+  }
+
+  function tierOf(item){
     if (item.core_confirmed) return "CORE";
     if (item.stable_confirmed) return "STABLE";
-    // EARLY 包含：forming_confirmed + 还没 forming 的（真正早期）
+    if (item.forming_confirmed) return "FORMING";
     return "EARLY";
   }
 
-  function zoneLabel(item){
-    if (item.core_confirmed) return "CORE CONSENSUS";
-    if (item.stable_confirmed) return "STABLE CONSENSUS";
-    if (item.forming_confirmed) return "FORMING CONSENSUS";
-    return "EARLY CONSENSUS";
+  function renderEmpty(text){
+    return `<div class="empty">${text}</div>`;
   }
 
-  function renderCard(item){
-    const mins = observedMinutes(item);
-    const label = zoneLabel(item);
+  function renderError(text){
+    return `<div class="error">${text}</div>`;
+  }
 
-    const badges = `
-      <span class="badge">Liquidity Verified</span>
-      ${item.smart_money_count > 0 ? `<span class="badge">Smart Money Detected</span>` : ``}
-      <span class="badge">Narrative Logged</span>
-    `;
+  function setZoneMeta(coreN, stableN, earlyN, total){
+    document.getElementById("core-meta").innerText = `${coreN} active`;
+    document.getElementById("stable-meta").innerText = `${stableN} active`;
+    document.getElementById("early-meta").innerText = `${earlyN} active`;
+
+    document.getElementById("count-core").innerText = coreN;
+    document.getElementById("count-stable").innerText = stableN;
+    document.getElementById("count-early").innerText = earlyN;
+
+    document.getElementById("observed-count").innerText = (total ?? (coreN + stableN + earlyN));
+  }
+
+  function renderCard(item, rank){
+    const mins = observedMinutes(item);
+    const duration = humanDurationFromMinutes(mins);
+    const tier = tierOf(item);
+
+    const smartTag = (item.smart_money_count ?? 0) > 0
+      ? `<span class="tag">🧠 Smart: ${item.smart_money_count}</span>`
+      : `<span class="tag">🐋 Whale-only</span>`;
+
+    const durationTag = `<span class="tag">⏱ ${duration}</span>`;
+    const tierTag = `<span class="tag">🏷 ${tier}</span>`;
 
     return `
       <div class="card">
-        <div class="card-header">
-          <div class="symbol">$${item.symbol ?? "???"}</div>
-          <div class="score">${(item.banana_score ?? 0).toFixed(2)}</div>
+        <div class="row-top">
+          <div class="left">
+            <div class="rank">${rank}</div>
+            <div class="token">
+              <div class="symbol">$${item.symbol ?? "???"}</div>
+              <div class="mini">
+                ${durationTag}
+                ${tierTag}
+                ${smartTag}
+              </div>
+            </div>
+          </div>
+          <div class="score">${Number(item.banana_score ?? 0).toFixed(2)}</div>
         </div>
-
-        <div class="timeline-row">
-          <div>${label}</div>
-          <div>Observed <b>${mins}m</b></div>
-        </div>
-
-        <div class="badges">${badges}</div>
 
         <div class="narrative">"${item.narrative_log ?? "—"}"</div>
 
-        <div class="card-actions">
-          <button class="btn-link" onclick="openTimeline('${item.ca}','${item.symbol ?? ""}')">View Timeline</button>
-          <div class="liq">LIQ: $${Math.round(item.liq ?? 0).toLocaleString()}</div>
+        <div class="actions">
+          <button class="btn" onclick="openTimeline('${item.ca}','${item.symbol ?? ""}')">View Timeline</button>
+          <div class="liq">💧 LIQ: $${Math.round(item.liq ?? 0).toLocaleString()}</div>
         </div>
       </div>
     `;
   }
 
-  function setMetaCounts(coreN, stableN, earlyN){
-    document.getElementById("core-meta").innerText = `${coreN} shown`;
-    document.getElementById("stable-meta").innerText = `${stableN} shown`;
-    document.getElementById("early-meta").innerText = `${earlyN} shown`;
-  }
-
+  // -------- API calls --------
   async function loadThreeZoneFeed(){
-  // 一次请求拿到三分区数据
-  const r = await fetch("/api/feed?limit=50", { cache: "no-store" });
-  const js = await r.json();
+    const r = await fetch("/api/feed?limit=50", { cache: "no-store" });
+    const js = await r.json();
 
-  if (!js.ok) {
-    throw new Error(js.error || "Failed to load /api/feed");
+    if (!js.ok){
+      // 把错误渲染到三个区，避免“看起来像没数据”
+      const err = `Feed error.\n${js.error || "unknown"}\n${js.details || ""}`;
+      document.getElementById("core-list").innerHTML = renderError(err);
+      document.getElementById("stable-list").innerHTML = renderError(err);
+      document.getElementById("early-list").innerHTML = renderError(err);
+      document.getElementById("last-update").innerText = "feed error";
+      setZoneMeta(0,0,0,0);
+      return;
+    }
+
+    const coreAll = js.zones?.core || [];
+    const stableAll = js.zones?.stable || [];
+    const earlyAll = js.zones?.early || [];
+
+    const coreList = coreAll.slice(0, LIMIT_CORE);
+    const stableList = stableAll.slice(0, LIMIT_STABLE);
+    const earlyList = earlyAll.slice(0, LIMIT_EARLY);
+
+    document.getElementById("core-list").innerHTML =
+      coreList.length ? coreList.map((x, i) => renderCard(x, i+1)).join("")
+                      : renderEmpty("No sustained consensus yet. Monitoring CORE candidates…");
+
+    document.getElementById("stable-list").innerHTML =
+      stableList.length ? stableList.map((x, i) => renderCard(x, i+1)).join("")
+                        : renderEmpty("No stable consensus yet. Signals need time to stabilize…");
+
+    document.getElementById("early-list").innerHTML =
+      earlyList.length ? earlyList.map((x, i) => renderCard(x, i+1)).join("")
+                       : renderEmpty("No early signals right now. Hunter is scanning…");
+
+    setZoneMeta(coreAll.length, stableAll.length, earlyAll.length, js.counts?.total ?? (coreAll.length + stableAll.length + earlyAll.length));
+    document.getElementById("last-update").innerText = "just now";
   }
 
-  // 这里可以在前端再裁剪每个 zone 显示数量
-  const coreList = (js.zones.core || []).slice(0, LIMIT_CORE);
-  const stableList = (js.zones.stable || []).slice(0, LIMIT_STABLE);
-  const earlyList = (js.zones.early || []).slice(0, LIMIT_EARLY);
+  // -------- Next scan countdown --------
+  function tick(){
+    secondsLeft -= 1;
+    if (secondsLeft <= 0) secondsLeft = Math.floor(REFRESH_MS / 1000);
+    document.getElementById("next-scan").innerText = `${secondsLeft}s`;
+  }
 
-  document.getElementById("core-list").innerHTML =
-    coreList.length ? coreList.map((x, i) => renderCard(x, i+1)).join("")
-                    : renderEmpty("No sustained consensus yet. Monitoring CORE candidates…");
-
-  document.getElementById("stable-list").innerHTML =
-    stableList.length ? stableList.map((x, i) => renderCard(x, i+1)).join("")
-                      : renderEmpty("No stable consensus yet. Signals need time to stabilize…");
-
-  document.getElementById("early-list").innerHTML =
-    earlyList.length ? earlyList.map((x, i) => renderCard(x, i+1)).join("")
-                     : renderEmpty("No early signals right now. Hunter is scanning…");
-
-  // Radar Summary Bar + Zone meta
-  setZoneMeta(coreList.length, stableList.length, earlyList.length);
-
-  // 顶部 observed 总数（用 total 更真实）
-  document.getElementById("observed-count").innerText = js.counts?.total ?? (coreList.length + stableList.length + earlyList.length);
-
-  // last update 显示：just now / 或者用 js.ts 更“系统”
-  document.getElementById("last-update").innerText = "just now";
-}
-
-
-  // ===== Timeline Modal =====
+  // -------- Timeline Modal --------
   const backdrop = document.getElementById("modal-backdrop");
   document.getElementById("modal-close").onclick = () => closeTimeline();
   backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeTimeline(); });
@@ -359,85 +483,66 @@ async function initSupabaseFromConfig() {
   }
 
   async function openTimeline(ca, symbol){
-  document.getElementById("modal-title").innerText = `Timeline · $${symbol || "???"}`;
-  document.getElementById("modal-sub").innerText = ca;
-  document.getElementById("modal-content").innerHTML = `<div class="loading">Loading…</div>`;
-  backdrop.style.display = "flex";
+    document.getElementById("modal-title").innerText = `Timeline · $${symbol || "???"}`;
+    document.getElementById("modal-sub").innerText = ca;
+    document.getElementById("modal-content").innerHTML = `<div class="loading">Loading…</div>`;
+    backdrop.style.display = "flex";
 
-  try{
-    const r = await fetch(`/api/timeline?ca=${encodeURIComponent(ca)}&limit=50`, { cache: "no-store" });
-    const js = await r.json();
+    try{
+      const r = await fetch(`/api/timeline?ca=${encodeURIComponent(ca)}&limit=50`, { cache: "no-store" });
+      const js = await r.json();
 
-    if (!js.ok){
-      document.getElementById("modal-content").innerHTML =
-        `<div class="loading">Failed to load timeline: ${js.error || "unknown error"}</div>`;
-      return;
-    }
+      if (!js.ok){
+        document.getElementById("modal-content").innerHTML =
+          `<div class="loading">Failed to load timeline: ${js.error || "unknown error"}${js.details ? "<br/><br/>" + js.details : ""}</div>`;
+        return;
+      }
 
-    const data = js.timeline || [];
-    if (!data.length){
-      document.getElementById("modal-content").innerHTML =
-        `<div class="loading">No timeline yet. (Brain will write events after next audits.)</div>`;
-      return;
-    }
+      const data = js.timeline || [];
+      if (!data.length){
+        document.getElementById("modal-content").innerHTML =
+          `<div class="loading">No timeline yet. (Brain will write events after next audits.)</div>`;
+        return;
+      }
 
-    const html = data.map(row => `
-      <div class="tl-item">
-        <div class="tl-top">
-          <div class="tl-evt">${eventTitle(row.event)}</div>
-          <div class="tl-time">${fmtTime(row.created_at)}</div>
+      const html = data.map(row => `
+        <div class="tl-item">
+          <div class="tl-top">
+            <div class="tl-evt">${eventTitle(row.event)}</div>
+            <div class="tl-time">${fmtTime(row.created_at)}</div>
+          </div>
+          <div class="tl-detail">${eventDetail(row.event, row.payload)}</div>
         </div>
-        <div class="tl-detail">${eventDetail(row.event, row.payload)}</div>
-      </div>
-    `).join("");
+      `).join("");
 
-    document.getElementById("modal-content").innerHTML = html;
+      document.getElementById("modal-content").innerHTML = html;
 
-  } catch (e){
-    console.error(e);
-    document.getElementById("modal-content").innerHTML =
-      `<div class="loading">Failed to load timeline (network error).</div>`;
+    } catch (e){
+      console.error(e);
+      document.getElementById("modal-content").innerHTML =
+        `<div class="loading">Failed to load timeline (network error).</div>`;
+    }
   }
-}
-
 
   function closeTimeline(){
     backdrop.style.display = "none";
   }
 
-  // initial + refresh
- (async () => {
-  try {
-    // 先初始化配置
-    await initSupabaseFromConfig();
-
-    // 再启动页面逻辑
+  // -------- Boot --------
+  (async () => {
+    // 先跑一次
     await loadThreeZoneFeed();
 
-    // 倒计时 + 定时刷新
+    // 倒计时
+    document.getElementById("next-scan").innerText = `${secondsLeft}s`;
     setInterval(tick, 1000);
+
+    // 定时刷新
     setInterval(async () => {
       secondsLeft = Math.floor(REFRESH_MS / 1000);
       await loadThreeZoneFeed();
     }, REFRESH_MS);
-
-  } catch (e) {
-    console.error(e);
-
-    // 给用户一个可见提示（避免白屏）
-    const core = document.getElementById("core-list");
-    const stable = document.getElementById("stable-list");
-    const early = document.getElementById("early-list");
-    const msg = `<div class="empty">Config load failed. Check /api/config and Vercel env vars.</div>`;
-    if (core) core.innerHTML = msg;
-    if (stable) stable.innerHTML = msg;
-    if (early) early.innerHTML = msg;
-
-    const last = document.getElementById("last-update");
-    if (last) last.innerText = "config error";
-  }
-})();
-
+  })();
 </script>
 
 </body>
