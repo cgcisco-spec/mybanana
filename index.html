@@ -60,6 +60,29 @@
     .timer{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .value{color:var(--text);font-weight:900}
 
+    /* Actions in top bar */
+    .top-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .btn{
+      cursor:pointer;
+      border:1px solid var(--line);
+      background:#0b1220;
+      color:var(--text);
+      padding:7px 10px;
+      border-radius:10px;
+      font-size:.64rem;
+    }
+    .btn:hover{filter:brightness(1.05)}
+    .btn-ghost{background:transparent}
+    .btn-primary{
+      border-color:rgba(251,191,36,.35);
+      background:rgba(251,191,36,.10);
+    }
+    .btn-mini{
+      padding:6px 8px;
+      font-size:.60rem;
+      border-radius:9px;
+    }
+
     /* Zones */
     .zones{display:flex;flex-direction:column;gap:14px}
     .zone{
@@ -76,7 +99,9 @@
         linear-gradient(180deg, rgba(15,20,32,.95), rgba(12,16,26,.95));
       border-bottom:1px solid var(--line);
       display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+      cursor:pointer;
     }
+    .zone-head:hover{filter:brightness(1.04)}
     .zone-title{
       display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
       font-weight:900;
@@ -187,15 +212,6 @@
     .actions{
       margin-top:10px;
       display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
-    }
-    .btn{
-      cursor:pointer;
-      border:1px solid var(--line);
-      background:#0b1220;
-      color:var(--text);
-      padding:7px 10px;
-      border-radius:10px;
-      font-size:.64rem;
     }
     .liq{font-size:.60rem;color:var(--muted)}
     .empty{
@@ -328,6 +344,60 @@
       white-space:pre-wrap;
       word-break:break-word;
     }
+
+    /* ========== Feedback Modal ========== */
+    .fb-backdrop{
+      position:fixed;inset:0;background:rgba(0,0,0,.55);
+      display:none;align-items:center;justify-content:center;padding:18px;
+      z-index:1000;
+    }
+    .fb-modal{
+      width:min(560px,100%);
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:18px;
+      overflow:hidden;
+      box-shadow:0 20px 60px rgba(0,0,0,.4);
+    }
+    .fb-head{
+      background:var(--panel2);
+      border-bottom:1px solid var(--line);
+      padding:14px 16px;
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+    }
+    .fb-title{font-weight:900}
+    .fb-body{padding:14px 16px}
+    .fb-row{margin-bottom:10px}
+    .fb-input,.fb-text{
+      width:100%;
+      background:#0b1220;
+      border:1px solid var(--line);
+      color:var(--text);
+      border-radius:12px;
+      padding:10px 10px;
+      font-size:.72rem;
+      outline:none;
+    }
+    .fb-text{min-height:110px;resize:vertical;line-height:1.35}
+    .fb-help{font-size:.62rem;color:var(--muted);margin-top:6px}
+    .fb-actions{
+      display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;
+      padding:12px 16px;border-top:1px solid var(--line);
+      background:rgba(15,20,32,.6);
+    }
+    .toast{
+      position:fixed;left:50%;transform:translateX(-50%);
+      bottom:18px;
+      background:#0b1220;
+      border:1px solid var(--line);
+      color:var(--text);
+      padding:8px 10px;border-radius:12px;
+      font-size:.70rem;
+      display:none;
+      z-index:1100;
+      max-width:min(720px, 92vw);
+      text-align:center;
+    }
   </style>
 </head>
 
@@ -353,15 +423,20 @@
         <div class="pill">Next scan: <span class="value" id="next-scan">10s</span></div>
         <div class="pill">Observed: <span class="value" id="observed-count">--</span></div>
       </div>
+
+      <div class="top-actions">
+        <button class="btn btn-primary" id="btn-waitlist">Join Waitlist</button>
+        <button class="btn btn-ghost" id="btn-feedback">Feedback</button>
+      </div>
     </div>
 
     <div class="zones">
 
       <div class="zone">
-        <div class="zone-head">
+        <div class="zone-head" id="zone-core-head">
           <div class="zone-title">
             <span class="big">CORE ZONE</span>
-            <span class="sub">Sustained Consensus</span>
+            <span class="sub">Sustained Consensus · verifiable timeline (not a prediction)</span>
           </div>
           <div class="zone-meta" id="core-meta"><span class="meta-dot"></span> —</div>
         </div>
@@ -369,7 +444,7 @@
       </div>
 
       <div class="zone">
-        <div class="zone-head">
+        <div class="zone-head" id="zone-stable-head">
           <div class="zone-title">
             <span class="big">STABLE ZONE</span>
             <span class="sub">Emerging Stability</span>
@@ -380,7 +455,7 @@
       </div>
 
       <div class="zone">
-        <div class="zone-head">
+        <div class="zone-head" id="zone-early-head">
           <div class="zone-title">
             <span class="big">EARLY ZONE</span>
             <span class="sub">Under Observation</span>
@@ -420,6 +495,32 @@
     </div>
   </div>
 
+  <!-- Feedback Modal -->
+  <div class="fb-backdrop" id="fb-backdrop">
+    <div class="fb-modal" role="dialog" aria-modal="true" aria-labelledby="fb-title">
+      <div class="fb-head">
+        <div class="fb-title" id="fb-title">Feedback</div>
+        <button class="modal-close" id="fb-close">Close</button>
+      </div>
+      <div class="fb-body">
+        <div class="fb-row">
+          <input class="fb-input" id="fb-email" placeholder="Email (optional)" />
+          <div class="fb-help">If you want a reply, leave an email.</div>
+        </div>
+        <div class="fb-row">
+          <textarea class="fb-text" id="fb-message" placeholder="What do you want Banana Radar to do for you?"></textarea>
+          <div class="fb-help">Examples: “Alert me when CORE adds new tokens”, “Explain why a token is CORE”, “Export CSV”.</div>
+        </div>
+      </div>
+      <div class="fb-actions">
+        <button class="btn btn-ghost" id="fb-cancel">Cancel</button>
+        <button class="btn btn-primary" id="fb-send">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
 <script>
   // -------- Config --------
   const LIMIT_CORE = 5;
@@ -433,6 +534,45 @@
   const FORMING_MIN = 15;
   const STABLE_MIN = 45;
   const CORE_MIN = 120;
+
+  // -------- Analytics (minimal) --------
+  function getSessionId() {
+    const k = "br_session_id";
+    let v = localStorage.getItem(k);
+    if (!v) {
+      v = (crypto?.randomUUID?.() || (Date.now() + "_" + Math.random())).toString();
+      localStorage.setItem(k, v);
+    }
+    return v;
+  }
+
+  async function track(event, props = {}) {
+    try {
+      await fetch("/api/event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: getSessionId(),
+          event,
+          props
+        })
+      });
+    } catch (_) {}
+  }
+
+  function pageViewProps(){
+    const u = new URL(location.href);
+    const props = {
+      path: u.pathname,
+      search: u.search,
+      referrer: document.referrer || "",
+    };
+    ["utm_source","utm_medium","utm_campaign","utm_content","utm_term"].forEach(k=>{
+      const v = u.searchParams.get(k);
+      if (v) props[k] = v;
+    });
+    return props;
+  }
 
   // -------- Helpers --------
   function fmtTime(ts){
@@ -510,6 +650,18 @@
     document.getElementById("observed-count").innerText = (total ?? (coreN + stableN + earlyN));
   }
 
+  function toast(msg){
+    const el = document.getElementById("toast");
+    el.innerText = msg;
+    el.style.display = "block";
+    clearTimeout(el.__t);
+    el.__t = setTimeout(()=> el.style.display="none", 1800);
+  }
+
+  function safeAttr(s){
+    return (s || "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
+  }
+
   function renderCard(item, rank){
     const mins = observedMinutes(item);
     const duration = humanDurationFromMinutes(mins);
@@ -519,11 +671,11 @@
       ? `<span class="tag">🧠 Smart: ${item.smart_money_count}</span>`
       : `<span class="tag">🐋 Whale-only</span>`;
 
-    const tierBadge = `<span class="badge ${tier}" title="${nextTierHint(mins)}"><span class="b-dot"></span>${tier}</span>`;
+    const tierBadge = `<span class="badge ${tier}" title="${safeAttr(nextTierHint(mins))}"><span class="b-dot"></span>${tier}</span>`;
     const durationTag = `<span class="tag">⏱ ${duration}</span>`;
 
-    // progress across 0..120 (cap at 100%)
     const pct = Math.min(100, Math.round((mins / CORE_MIN) * 100));
+    const ca = item.ca || "";
 
     return `
       <div class="card">
@@ -531,7 +683,7 @@
           <div class="left">
             <div class="rank">${rank}</div>
             <div class="token">
-              <div class="symbol">$${item.symbol ?? "???"}</div>
+              <div class="symbol">$${safeAttr(item.symbol ?? "???")}</div>
               <div class="mini">
                 ${tierBadge}
                 ${durationTag}
@@ -542,20 +694,24 @@
           <div class="score">${Number(item.banana_score ?? 0).toFixed(2)}</div>
         </div>
 
-        <div class="progress-wrap" title="Observed ${mins} mins · ${nextTierHint(mins)}">
+        <div class="progress-wrap" title="Observed ${mins} mins · ${safeAttr(nextTierHint(mins))}">
           <div class="progress-label">
             <span>Consensus timeline</span>
-            <span>${mins}m · ${nextTierHint(mins)}</span>
+            <span>${mins}m · ${safeAttr(nextTierHint(mins))}</span>
           </div>
           <div class="progress">
             <div class="progress-bar" style="width:${pct}%"></div>
           </div>
         </div>
 
-        <div class="narrative">"${item.narrative_log ?? "—"}"</div>
+        <div class="narrative">"${safeAttr(item.narrative_log ?? "—")}"</div>
 
         <div class="actions">
-          <button class="btn" onclick="openTimeline('${item.ca}','${item.symbol ?? ""}')">View Timeline</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button class="btn btn-mini" onclick="openTimeline('${safeAttr(ca)}','${safeAttr(item.symbol ?? "")}')">View Timeline</button>
+            <button class="btn btn-mini btn-ghost" data-action="copy" data-ca="${safeAttr(ca)}">Copy CA</button>
+            <button class="btn btn-mini btn-ghost" data-action="share" data-ca="${safeAttr(ca)}">Share</button>
+          </div>
           <div class="liq">💧 LIQ: ${fmtUSD(item.liq ?? 0)}</div>
         </div>
       </div>
@@ -718,18 +874,18 @@
           <div class="tl-top">
             <div class="tl-left">
               <span class="tl-badge ${type}">${type.toUpperCase()}</span>
-              <div class="tl-title" title="${title}">${title}</div>
+              <div class="tl-title" title="${safeAttr(title)}">${safeAttr(title)}</div>
             </div>
             <div class="tl-time">${relTime(row.created_at)} · ${fmtTime(row.created_at)}</div>
           </div>
 
-          ${summary ? `<div class="tl-summary">${summary}</div>` : ``}
+          ${summary ? `<div class="tl-summary">${safeAttr(summary)}</div>` : ``}
 
-          ${kvs.length ? `<div class="tl-kvs">${kvs.map(x => `<span class="tl-kv">${x}</span>`).join("")}</div>` : ``}
+          ${kvs.length ? `<div class="tl-kvs">${kvs.map(x => `<span class="tl-kv">${safeAttr(x)}</span>`).join("")}</div>` : ``}
 
           <details class="tl-details">
             <summary>Proof (raw payload)</summary>
-            <div class="tl-json">${json}</div>
+            <div class="tl-json">${safeAttr(json)}</div>
           </details>
         </div>
       `;
@@ -741,6 +897,9 @@
     document.getElementById("modal-sub").innerText = ca;
     document.getElementById("modal-content").innerHTML = `<div class="loading">Loading…</div>`;
     backdrop.style.display = "flex";
+
+    // analytics
+    track("open_timeline", { ca });
 
     TL_ALL = false;
     TL_CACHE = [];
@@ -754,7 +913,7 @@
 
       if (!js.ok){
         document.getElementById("modal-content").innerHTML =
-          `<div class="loading">Failed to load timeline: ${js.error || "unknown error"}${js.details ? "<br/><br/>" + js.details : ""}</div>`;
+          `<div class="loading">Failed to load timeline: ${safeAttr(js.error || "unknown error")}${js.details ? "<br/><br/>" + safeAttr(js.details) : ""}</div>`;
         return;
       }
 
@@ -784,8 +943,111 @@
     hintEl.innerText = "—";
   }
 
+  // -------- Feedback modal --------
+  const fbBackdrop = document.getElementById("fb-backdrop");
+  const fbTitle = document.getElementById("fb-title");
+  const fbEmail = document.getElementById("fb-email");
+  const fbMessage = document.getElementById("fb-message");
+  let fbKind = "feedback";
+
+  function openFeedback(kind){
+    fbKind = kind || "feedback";
+    fbTitle.innerText = fbKind === "waitlist" ? "Join Waitlist" : "Feedback";
+    fbMessage.placeholder = fbKind === "waitlist"
+      ? "What would you use Banana Radar for? What alerts would matter to you?"
+      : "What do you want Banana Radar to do for you?";
+    fbBackdrop.style.display = "flex";
+    fbEmail.focus();
+    track(fbKind === "waitlist" ? "open_waitlist" : "open_feedback");
+  }
+
+  function closeFeedback(){
+    fbBackdrop.style.display = "none";
+    fbKind = "feedback";
+  }
+
+  document.getElementById("btn-waitlist").onclick = () => openFeedback("waitlist");
+  document.getElementById("btn-feedback").onclick = () => openFeedback("feedback");
+  document.getElementById("fb-close").onclick = () => closeFeedback();
+  document.getElementById("fb-cancel").onclick = () => closeFeedback();
+  fbBackdrop.addEventListener("click", (e) => { if (e.target === fbBackdrop) closeFeedback(); });
+
+  async function sendFeedback(){
+    const email = (fbEmail.value || "").trim();
+    const message = (fbMessage.value || "").trim();
+
+    if (message.length < 2 && fbKind !== "waitlist") {
+      toast("Please write at least a short message.");
+      return;
+    }
+
+    const caFromUrl = new URL(location.href).searchParams.get("ca") || null;
+
+    try{
+      const r = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: fbKind,
+          email,
+          message,
+          page: location.pathname + location.search,
+          ca: caFromUrl,
+          session_id: getSessionId()
+        })
+      });
+      const js = await r.json();
+      if (!js.ok) {
+        toast("Failed to send. Try again later.");
+        return;
+      }
+      toast("Sent. Thank you!");
+      fbEmail.value = "";
+      fbMessage.value = "";
+      closeFeedback();
+      track("feedback_sent", { kind: fbKind });
+    } catch(_) {
+      toast("Network error. Try again later.");
+    }
+  }
+
+  document.getElementById("fb-send").onclick = () => sendFeedback();
+
+  // -------- Share / Copy handlers (event delegation) --------
+  document.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const ca = btn.dataset.ca || "";
+    if (!ca) return;
+
+    try{
+      if (action === "copy"){
+        await navigator.clipboard.writeText(ca);
+        toast("CA copied");
+        track("copy_token", { ca, kind: "ca" });
+      } else if (action === "share"){
+        const u = new URL(location.href);
+        u.searchParams.set("ca", ca);
+        await navigator.clipboard.writeText(u.toString());
+        toast("Share link copied");
+        track("copy_token", { ca, kind: "link" });
+      }
+    }catch{
+      toast("Copy failed (permission).");
+    }
+  });
+
+  // -------- Zone click tracking --------
+  document.getElementById("zone-core-head").onclick = () => track("view_zone_core");
+  document.getElementById("zone-stable-head").onclick = () => track("view_zone_stable");
+  document.getElementById("zone-early-head").onclick = () => track("view_zone_early");
+
   // -------- Boot --------
   (async () => {
+    // analytics: page view
+    track("page_view", pageViewProps());
+
     await loadThreeZoneFeed();
 
     document.getElementById("next-scan").innerText = `${secondsLeft}s`;
@@ -795,6 +1057,13 @@
       secondsLeft = Math.floor(REFRESH_MS / 1000);
       await loadThreeZoneFeed();
     }, REFRESH_MS);
+
+    // Auto-open timeline if shared link has ?ca=
+    const ca = new URL(location.href).searchParams.get("ca");
+    if (ca) {
+      // symbol unknown here; modal will show ??? but timeline loads
+      openTimeline(ca, "");
+    }
   })();
 </script>
 
