@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Banana Radar · v1 Alpha</title>
+
+  <!-- Brand icons -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="/favicon.ico">
+  <!-- <link rel="apple-touch-icon" href="/apple-touch-icon.png"> -->
+  <meta name="theme-color" content="#0b0e13">
+
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#0b0e13;
+      --panel:#121722;
+      --panel2:#0f1420;
+      --line:#1f2937;
+      --muted:#6b7280;
+      --text:#e5e7eb;
+      --gold:#fbbf24;
+      --good:#22c55e;
+      --soft:#9ca3af;
+
+      --early:#94a3b8;
+      --forming:#38bdf8;
+      --stable:#a78bfa;
+      --core:#fbbf24;
+      --risk:#fb7185;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text)}
+    .container{max-width:980px;margin:0 auto;padding:24px}
+
+    header{margin-bottom:12px}
+    .subtitle{font-size:.78rem;color:var(--muted);margin-top:6px}
+
+    /* Brand header */
+    .brand-row{display:flex;align-items:center;gap:12px}
+    .brand-logo{height:44px;width:auto;display:block}
+    @media (max-width:520px){
+      .brand-logo{height:40px}
+      .container{padding:18px}
+    }
+
+    /* Radar Summary Bar */
+    .radar-bar{
+      margin:14px 0 18px;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:
+        radial-gradient(1200px 260px at 18% 50%, rgba(251,191,36,.08), rgba(0,0,0,0)),
+        radial-gradient(900px 260px at 82% 50%, rgba(34,197,94,.06), rgba(0,0,0,0)),
+        linear-gradient(180deg, rgba(15,20,32,.95), rgba(12,16,26,.95));
+      display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+      color:var(--muted);
+      font-size:.72rem;
+    }
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:6px 10px;border-radius:999px;
+      background:#0b1220;border:1px solid var(--line);
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--good);display:inline-block}
+    .count-dot{width:6px;height:6px;border-radius:999px;background:#3b82f6;display:inline-block;opacity:.85}
+    .counts{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .timer{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .value{color:var(--text);font-weight:900}
+
+    /* Actions in top bar */
+    .top-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .btn{
+      cursor:pointer;
+      border:1px solid var(--line);
+      background:#0b1220;
+      color:var(--text);
+      padding:7px 10px;
+      border-radius:10px;
+      font-size:.64rem;
+    }
+    .btn:hover{filter:brightness(1.05)}
+    .btn-ghost{background:transparent}
+    .btn-primary{
+      border-color:rgba(251,191,36,.35);
+      background:rgba(251,191,36,.10);
+    }
+    .btn-mini{
+      padding:6px 8px;
+      font-size:.60rem;
+      border-radius:9px;
+    }
+
+    /* Zones */
+    .zones{display:flex;flex-direction:column;gap:14px}
+    .zone{
+      border-radius:18px;
+      border:1px solid var(--line);
+      overflow:hidden;
+      background:rgba(18,23,34,.55);
+    }
+    .zone-head{
+      padding:14px 16px;
+      background:
+        radial-gradient(1200px 220px at 20% 50%, rgba(251,191,36,.08), rgba(0,0,0,0)),
+        radial-gradient(900px 220px at 80% 50%, rgba(34,197,94,.05), rgba(0,0,0,0)),
+        linear-gradient(180deg, rgba(15,20,32,.95), rgba(12,16,26,.95));
+      border-bottom:1px solid var(--line);
+      display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+      cursor:pointer;
+    }
+    .zone-head:hover{filter:brightness(1.04)}
+    .zone-title{
+      display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+      font-weight:900;
+      letter-spacing:1px;
+      text-transform:uppercase;
+    }
+    .zone-title .big{font-size:.95rem;color:var(--text)}
+    .zone-title .sub{font-size:.70rem;color:var(--muted);font-weight:600;letter-spacing:.4px;text-transform:none}
+    .zone-meta{
+      font-size:.62rem;color:var(--muted);
+      border:1px solid var(--line);
+      background:#0b1220;
+      padding:6px 10px;border-radius:999px;
+      display:flex;gap:10px;align-items:center;
+    }
+    .meta-dot{width:6px;height:6px;border-radius:999px;background:#3b82f6;display:inline-block;opacity:.8}
+    .zone-body{padding:12px 12px 4px}
+
+    /* Cards */
+    .card{
+      background:linear-gradient(180deg, rgba(18,23,34,.9), rgba(15,20,32,.9));
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:13px 14px;
+      margin-bottom:10px;
+    }
+    .row-top{
+      display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+    }
+    .left{display:flex;align-items:flex-start;gap:10px;min-width:0}
+    .rank{
+      width:26px;height:26px;border-radius:10px;
+      display:flex;align-items:center;justify-content:center;
+      background:#0b1220;border:1px solid var(--line);
+      font-size:.72rem;color:var(--soft);font-weight:900;
+      flex:0 0 auto;
+      margin-top:2px;
+    }
+    .token{min-width:0}
+    .symbol{
+      font-weight:900;
+      color:var(--gold);
+      font-size:1.02rem;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    }
+    .mini{
+      margin-top:6px;
+      font-size:.62rem;
+      color:var(--muted);
+      display:flex;gap:8px;flex-wrap:wrap;
+      align-items:center;
+    }
+    .tag{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:3px 8px;border-radius:999px;
+      background:#0b1220;border:1px solid var(--line);
+      color:var(--muted);
+      white-space:nowrap;
+    }
+
+    /* Consensus badge */
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:3px 8px;border-radius:999px;
+      background:#0b1220;border:1px solid var(--line);
+      font-size:.62rem;font-weight:900;
+      letter-spacing:.3px;
+    }
+    .badge .b-dot{width:6px;height:6px;border-radius:999px;display:inline-block;opacity:.95}
+    .badge.EARLY{color:var(--early)}
+    .badge.EARLY .b-dot{background:var(--early)}
+    .badge.FORMING{color:var(--forming)}
+    .badge.FORMING .b-dot{background:var(--forming)}
+    .badge.STABLE{color:var(--stable)}
+    .badge.STABLE .b-dot{background:var(--stable)}
+    .badge.CORE{color:var(--core)}
+    .badge.CORE .b-dot{background:var(--core)}
+
+    /* Progress */
+    .progress-wrap{margin-top:10px}
+    .progress-label{
+      font-size:.60rem;color:var(--muted);
+      display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    }
+    .progress{
+      height:7px;border-radius:999px;
+      background:#0b1220;border:1px solid var(--line);
+      overflow:hidden;margin-top:5px;
+    }
+    .progress-bar{
+      height:100%;
+      width:0%;
+      background:linear-gradient(90deg, rgba(56,189,248,.9), rgba(167,139,250,.9), rgba(251,191,36,.9));
+    }
+
+    .score{
+      font-weight:900;
+      font-size:1.20rem;
+      flex:0 0 auto;
+      color:var(--text);
+      margin-top:2px;
+    }
+    .narrative{
+      margin-top:10px;
+      font-size:.70rem;color:#d1d5db;line-height:1.35;
+      opacity:.95;
+    }
+    .actions{
+      margin-top:10px;
+      display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+    }
+    .liq{font-size:.60rem;color:var(--muted)}
+    .empty{
+      padding:10px 6px 14px;
+      color:var(--muted);
+      font-size:.68rem;
+      text-align:center;
+    }
+    .error{
+      padding:10px 12px 12px;
+      border:1px solid rgba(239,68,68,.35);
+      background:rgba(239,68,68,.08);
+      border-radius:12px;
+      color:#fecaca;
+      font-size:.68rem;
+      line-height:1.35;
+      margin-bottom:10px;
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+
+    footer{margin-top:18px;font-size:.62rem;color:var(--muted);text-align:center;line-height:1.4}
+
+    /* ========== Timeline Modal (scroll + summary + proof) ========== */
+    .modal-backdrop{
+      position:fixed;inset:0;background:rgba(0,0,0,.55);
+      display:none;align-items:center;justify-content:center;padding:18px;
+      z-index:999;
+    }
+    .modal{
+      width:min(820px,100%);
+      max-height:85vh;
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:18px;
+      overflow:hidden;
+      box-shadow:0 20px 60px rgba(0,0,0,.4);
+      display:flex;
+      flex-direction:column;
+    }
+    .modal-head{
+      position:sticky; top:0; z-index:2;
+      background:var(--panel2);
+      border-bottom:1px solid var(--line);
+      padding:14px 16px;
+      display:flex;justify-content:space-between;align-items:center;gap:10px
+    }
+    .modal-title{font-weight:900}
+    .modal-sub{font-size:.68rem;color:var(--muted);margin-top:2px}
+    .modal-close{
+      cursor:pointer;border:1px solid var(--line);background:#0b1220;color:var(--text);
+      padding:6px 10px;border-radius:10px;font-size:.65rem;
+    }
+    .modal-body{
+      padding:14px 16px;
+      overflow-y:auto;
+    }
+    .modal-foot{
+      position:sticky; bottom:0; z-index:2;
+      background:var(--panel2);
+      border-top:1px solid var(--line);
+      padding:10px 16px;
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+    }
+    .modal-btn{
+      cursor:pointer;
+      border:1px solid var(--line);
+      background:#0b1220;
+      color:var(--text);
+      padding:7px 10px;
+      border-radius:10px;
+      font-size:.64rem;
+    }
+    .modal-btn:disabled{opacity:.5;cursor:not-allowed}
+    .modal-hint{font-size:.62rem;color:var(--muted)}
+
+    .loading{font-size:.7rem;color:var(--muted)}
+    .tl-item{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:12px 12px;
+      margin-bottom:10px;
+      background:#101827;
+    }
+    .tl-top{
+      display:flex;justify-content:space-between;align-items:center;
+      gap:10px;flex-wrap:wrap;
+    }
+    .tl-left{display:flex;align-items:center;gap:10px;min-width:0}
+    .tl-badge{
+      font-size:.60rem;font-weight:900;
+      padding:4px 8px;border-radius:999px;
+      border:1px solid var(--line);
+      background:#0b1220;
+      letter-spacing:.3px;
+      white-space:nowrap;
+    }
+    .tl-badge.audit{color:var(--forming)}
+    .tl-badge.consensus{color:var(--stable)}
+    .tl-badge.risk{color:var(--risk)}
+    .tl-title{
+      font-size:.72rem;font-weight:900;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      max-width:520px;
+    }
+    .tl-time{font-size:.62rem;color:var(--muted);white-space:nowrap}
+    .tl-summary{margin-top:6px;font-size:.70rem;color:#d1d5db;line-height:1.35}
+    .tl-kvs{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+    .tl-kv{
+      font-size:.60rem;color:var(--muted);
+      padding:3px 8px;border-radius:999px;
+      border:1px solid var(--line);
+      background:#0b1220;
+    }
+    .tl-details{margin-top:8px}
+    .tl-details summary{
+      cursor:pointer;
+      font-size:.62rem;
+      color:rgba(229,231,235,.75);
+    }
+    .tl-json{
+      margin-top:8px;
+      padding:10px;
+      border-radius:12px;
+      background:rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.08);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size:.70rem;
+      color:rgba(229,231,235,.75);
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+
+    /* ========== Feedback Modal ========== */
+    .fb-backdrop{
+      position:fixed;inset:0;background:rgba(0,0,0,.55);
+      display:none;align-items:center;justify-content:center;padding:18px;
+      z-index:1000;
+    }
+    .fb-modal{
+      width:min(560px,100%);
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:18px;
+      overflow:hidden;
+      box-shadow:0 20px 60px rgba(0,0,0,.4);
+    }
+    .fb-head{
+      background:var(--panel2);
+      border-bottom:1px solid var(--line);
+      padding:14px 16px;
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+    }
+    .fb-title{font-weight:900}
+    .fb-body{padding:14px 16px}
+    .fb-row{margin-bottom:10px}
+    .fb-input,.fb-text{
+      width:100%;
+      background:#0b1220;
+      border:1px solid var(--line);
+      color:var(--text);
+      border-radius:12px;
+      padding:10px 10px;
+      font-size:.72rem;
+      outline:none;
+    }
+    .fb-text{min-height:110px;resize:vertical;line-height:1.35}
+    .fb-help{font-size:.62rem;color:var(--muted);margin-top:6px}
+    .fb-actions{
+      display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;
+      padding:12px 16px;border-top:1px solid var(--line);
+      background:rgba(15,20,32,.6);
+    }
+    .toast{
+      position:fixed;left:50%;transform:translateX(-50%);
+      bottom:18px;
+      background:#0b1220;
+      border:1px solid var(--line);
+      color:var(--text);
+      padding:8px 10px;border-radius:12px;
+      font-size:.70rem;
+      display:none;
+      z-index:1100;
+      max-width:min(720px, 92vw);
+      text-align:center;
+    }
+
+    /* ========== Brand Loading (Radar Spinner + Skeleton) ========== */
+    .spinner{
+      width:18px;height:18px;border-radius:999px;
+      border:2px solid rgba(31,41,55,.9);
+      border-top-color:rgba(251,191,36,.95);
+      animation:spin .9s linear infinite;
+      display:inline-block;
+      vertical-align:middle;
+      margin-right:8px;
+    }
+    @keyframes spin{ to{ transform:rotate(360deg);} }
+
+    .skel{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:13px 14px;
+      margin-bottom:10px;
+      background:linear-gradient(180deg, rgba(18,23,34,.9), rgba(15,20,32,.9));
+      position:relative;
+      overflow:hidden;
+    }
+    .skel::after{
+      content:"";
+      position:absolute; inset:0;
+      transform:translateX(-60%);
+      background:linear-gradient(90deg,
+        rgba(255,255,255,0) 0%,
+        rgba(255,255,255,.06) 45%,
+        rgba(255,255,255,0) 90%);
+      animation:shimmer 1.1s ease-in-out infinite;
+    }
+    @keyframes shimmer{ to{ transform:translateX(60%);} }
+    .skel-line{height:10px;border-radius:8px;background:rgba(255,255,255,.05);margin:8px 0;}
+    .skel-line.w60{width:60%}
+    .skel-line.w40{width:40%}
+    .skel-line.w80{width:80%}
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <div class="brand-row">
+        <img class="brand-logo" src="/logo.svg" alt="Banana Radar" />
+      </div>
+      <div class="subtitle">Consensus Radar for New Tokens</div>
+    </header>
+
+    <!-- Radar Summary Bar -->
+    <div class="radar-bar">
+      <div class="pill"><span class="dot"></span> SYSTEM: ACTIVE</div>
+
+      <div class="counts">
+        <div class="pill"><span class="count-dot"></span> CORE: <span class="value" id="count-core">0</span></div>
+        <div class="pill"><span class="count-dot"></span> STABLE: <span class="value" id="count-stable">0</span></div>
+        <div class="pill"><span class="count-dot"></span> EARLY: <span class="value" id="count-early">0</span></div>
+      </div>
+
+      <div class="timer">
+        <div class="pill">Last: <span class="value" id="last-update">--</span></div>
+        <div class="pill">Next scan: <span class="value" id="next-scan">10s</span></div>
+        <div class="pill">Observed: <span class="value" id="observed-count">--</span></div>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn btn-primary" id="btn-waitlist">Join Waitlist</button>
+        <button class="btn btn-ghost" id="btn-feedback">Feedback</button>
+      </div>
+    </div>
+
+    <div class="zones">
+
+      <div class="zone">
+        <div class="zone-head" id="zone-core-head">
+          <div class="zone-title">
+            <span class="big">CORE ZONE</span>
+            <span class="sub">Sustained Consensus · verifiable timeline (not a prediction)</span>
+          </div>
+          <div class="zone-meta" id="core-meta"><span class="meta-dot"></span> —</div>
+        </div>
+        <div class="zone-body" id="core-list"></div>
+      </div>
+
+      <div class="zone">
+        <div class="zone-head" id="zone-stable-head">
+          <div class="zone-title">
+            <span class="big">STABLE ZONE</span>
+            <span class="sub">Emerging Stability</span>
+          </div>
+          <div class="zone-meta" id="stable-meta"><span class="meta-dot"></span> —</div>
+        </div>
+        <div class="zone-body" id="stable-list"></div>
+      </div>
+
+      <div class="zone">
+        <div class="zone-head" id="zone-early-head">
+          <div class="zone-title">
+            <span class="big">EARLY ZONE</span>
+            <span class="sub">Under Observation</span>
+          </div>
+          <div class="zone-meta" id="early-meta"><span class="meta-dot"></span> —</div>
+        </div>
+        <div class="zone-body" id="early-list"></div>
+      </div>
+
+    </div>
+
+    <footer>
+      Signals are formed, tested, and invalidated over time.<br/>
+      This system does not predict outcomes.
+    </footer>
+  </div>
+
+  <!-- Timeline Modal -->
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="modal-title">Timeline</div>
+          <div class="modal-sub" id="modal-sub">—</div>
+        </div>
+        <button class="modal-close" id="modal-close">Close</button>
+      </div>
+
+      <div class="modal-body" id="modal-content">
+        <div class="loading"><span class="spinner"></span>Loading…</div>
+      </div>
+
+      <div class="modal-foot">
+        <button class="modal-btn" id="modal-toggle" disabled>Show all events</button>
+        <div class="modal-hint" id="modal-hint">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback Modal -->
+  <div class="fb-backdrop" id="fb-backdrop">
+    <div class="fb-modal" role="dialog" aria-modal="true" aria-labelledby="fb-title">
+      <div class="fb-head">
+        <div class="fb-title" id="fb-title">Feedback</div>
+        <button class="modal-close" id="fb-close">Close</button>
+      </div>
+      <div class="fb-body">
+        <div class="fb-row">
+          <input class="fb-input" id="fb-email" placeholder="Email (optional)" />
+          <div class="fb-help">If you want a reply, leave an email.</div>
+        </div>
+        <div class="fb-row">
+          <textarea class="fb-text" id="fb-message" placeholder="What do you want Banana Radar to do for you?"></textarea>
+          <div class="fb-help">Examples: “Alert me when CORE adds new tokens”, “Explain why a token is CORE”, “Export CSV”.</div>
+        </div>
+      </div>
+      <div class="fb-actions">
+        <button class="btn btn-ghost" id="fb-cancel">Cancel</button>
+        <button class="btn btn-primary" id="fb-send">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+  // -------- Config --------
+  const LIMIT_CORE = 5;
+  const LIMIT_STABLE = 6;
+  const LIMIT_EARLY = 8;
+
+  const REFRESH_MS = 10000;
+  let secondsLeft = Math.floor(REFRESH_MS / 1000);
+
+  // Consensus thresholds (minutes) for progress hints
+  const FORMING_MIN = 15;
+  const STABLE_MIN = 45;
+  const CORE_MIN = 120;
+
+  // -------- Analytics (minimal) --------
+  function getSessionId() {
+    const k = "br_session_id";
+    let v = localStorage.getItem(k);
+    if (!v) {
+      v = (crypto?.randomUUID?.() || (Date.now() + "_" + Math.random())).toString();
+      localStorage.setItem(k, v);
+    }
+    return v;
+  }
+
+  async function track(event, props = {}) {
+    try {
+      await fetch("/api/event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: getSessionId(),
+          event,
+          props
+        })
+      });
+    } catch (_) {}
+  }
+
+  function pageViewProps(){
+    const u = new URL(location.href);
+    const props = {
+      path: u.pathname,
+      search: u.search,
+      referrer: document.referrer || "",
+    };
+    ["utm_source","utm_medium","utm_campaign","utm_content","utm_term"].forEach(k=>{
+      const v = u.searchParams.get(k);
+      if (v) props[k] = v;
+    });
+    return props;
+  }
+
+  // -------- Helpers --------
+  function fmtTime(ts){
+    try{ return new Date(ts).toLocaleString(); }catch(e){ return ts; }
+  }
+
+  function relTime(ts){
+    try{
+      const t = new Date(ts).getTime();
+      const diff = Math.floor((Date.now() - t) / 1000);
+      if (diff < 30) return "just now";
+      if (diff < 60) return `${diff}s ago`;
+      const m = Math.floor(diff/60);
+      if (m < 60) return `${m}m ago`;
+      const h = Math.floor(m/60);
+      if (h < 48) return `${h}h ago`;
+      const d = Math.floor(h/24);
+      return `${d}d ago`;
+    }catch{
+      return fmtTime(ts);
+    }
+  }
+
+  function observedMinutes(item){
+    const base = item.first_passed_at || item.created_at;
+    if (!base) return 0;
+    const mins = Math.max(0, Math.floor((Date.now() - new Date(base).getTime()) / 60000));
+    return mins;
+  }
+
+  function humanDurationFromMinutes(mins){
+    if (mins < 60) return `${mins} mins`;
+    const hrs = mins / 60;
+    if (hrs < 48) return `${hrs.toFixed(1)} hours`;
+    const days = hrs / 24;
+    return `${days.toFixed(1)} days`;
+  }
+
+  function tierOf(item){
+    if (item.core_confirmed) return "CORE";
+    if (item.stable_confirmed) return "STABLE";
+    if (item.forming_confirmed) return "FORMING";
+    return "EARLY";
+  }
+
+  function nextTierHint(mins){
+    if (mins < FORMING_MIN) return `Next: FORMING in ${FORMING_MIN - mins}m`;
+    if (mins < STABLE_MIN) return `Next: STABLE in ${STABLE_MIN - mins}m`;
+    if (mins < CORE_MIN) return `Next: CORE in ${CORE_MIN - mins}m`;
+    return `Consensus sustained`;
+  }
+
+  function fmtUSD(n){
+    const x = Number(n || 0);
+    return `$${Math.round(x).toLocaleString()}`;
+  }
+
+  function renderEmpty(text){
+    return `<div class="empty">${text}</div>`;
+  }
+
+  function renderError(text){
+    return `<div class="error">${text}</div>`;
+  }
+
+  function setZoneMeta(coreN, stableN, earlyN, total){
+    document.getElementById("core-meta").innerText = `${coreN} active`;
+    document.getElementById("stable-meta").innerText = `${stableN} active`;
+    document.getElementById("early-meta").innerText = `${earlyN} active`;
+
+    document.getElementById("count-core").innerText = coreN;
+    document.getElementById("count-stable").innerText = stableN;
+    document.getElementById("count-early").innerText = earlyN;
+
+    document.getElementById("observed-count").innerText = (total ?? (coreN + stableN + earlyN));
+  }
+
+  function toast(msg){
+    const el = document.getElementById("toast");
+    el.innerText = msg;
+    el.style.display = "block";
+    clearTimeout(el.__t);
+    el.__t = setTimeout(()=> el.style.display="none", 1800);
+  }
+
+  function safeAttr(s){
+    return (s || "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
+  }
+
+  function renderSkeleton(n=4){
+    return Array.from({length:n}).map(()=>`
+      <div class="skel">
+        <div class="skel-line w40"></div>
+        <div class="skel-line w80"></div>
+        <div class="skel-line w60"></div>
+        <div class="skel-line w80"></div>
+      </div>
+    `).join("");
+  }
+
+  function renderCard(item, rank){
+    const mins = observedMinutes(item);
+    const duration = humanDurationFromMinutes(mins);
+    const tier = tierOf(item);
+
+    const smartTag = (item.smart_money_count ?? 0) > 0
+      ? `<span class="tag">🧠 Smart: ${item.smart_money_count}</span>`
+      : `<span class="tag">🐋 Whale-only</span>`;
+
+    const tierBadge = `<span class="badge ${tier}" title="${safeAttr(nextTierHint(mins))}"><span class="b-dot"></span>${tier}</span>`;
+    const durationTag = `<span class="tag">⏱ ${duration}</span>`;
+
+    const pct = Math.min(100, Math.round((mins / CORE_MIN) * 100));
+    const ca = item.ca || "";
+
+    return `
+      <div class="card">
+        <div class="row-top">
+          <div class="left">
+            <div class="rank">${rank}</div>
+            <div class="token">
+              <div class="symbol">$${safeAttr(item.symbol ?? "???")}</div>
+              <div class="mini">
+                ${tierBadge}
+                ${durationTag}
+                ${smartTag}
+              </div>
+            </div>
+          </div>
+          <div class="score">${Number(item.banana_score ?? 0).toFixed(2)}</div>
+        </div>
+
+        <div class="progress-wrap" title="Observed ${mins} mins · ${safeAttr(nextTierHint(mins))}">
+          <div class="progress-label">
+            <span>Consensus timeline</span>
+            <span>${mins}m · ${safeAttr(nextTierHint(mins))}</span>
+          </div>
+          <div class="progress">
+            <div class="progress-bar" style="width:${pct}%"></div>
+          </div>
+        </div>
+
+        <div class="narrative">"${safeAttr(item.narrative_log ?? "—")}"</div>
+
+        <div class="actions">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button class="btn btn-mini" onclick="openTimeline('${safeAttr(ca)}','${safeAttr(item.symbol ?? "")}')">View Timeline</button>
+            <button class="btn btn-mini btn-ghost" data-action="copy" data-ca="${safeAttr(ca)}">Copy CA</button>
+            <button class="btn btn-mini btn-ghost" data-action="share" data-ca="${safeAttr(ca)}">Share</button>
+          </div>
+          <div class="liq">💧 LIQ: ${fmtUSD(item.liq ?? 0)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  // -------- API calls --------
+  let __firstFeed = true;
+
+  async function loadThreeZoneFeed(){
+    // show skeleton only on first load OR when previously empty (keeps refresh smooth)
+    if (__firstFeed) {
+      document.getElementById("core-list").innerHTML = renderSkeleton(3);
+      document.getElementById("stable-list").innerHTML = renderSkeleton(3);
+      document.getElementById("early-list").innerHTML = renderSkeleton(3);
+    }
+
+    const r = await fetch("/api/feed?limit=80", { cache: "no-store" });
+    const js = await r.json();
+
+    if (!js.ok){
+      const err = `Feed error.\n${js.error || "unknown"}\n${js.details || ""}`;
+      document.getElementById("core-list").innerHTML = renderError(err);
+      document.getElementById("stable-list").innerHTML = renderError(err);
+      document.getElementById("early-list").innerHTML = renderError(err);
+      document.getElementById("last-update").innerText = "feed error";
+      setZoneMeta(0,0,0,0);
+      __firstFeed = false;
+      return;
+    }
+
+    const coreAll = js.zones?.core || [];
+    const stableAll = js.zones?.stable || [];
+    const earlyAll = js.zones?.early || [];
+
+    const coreList = coreAll.slice(0, LIMIT_CORE);
+    const stableList = stableAll.slice(0, LIMIT_STABLE);
+    const earlyList = earlyAll.slice(0, LIMIT_EARLY);
+
+    document.getElementById("core-list").innerHTML =
+      coreList.length ? coreList.map((x, i) => renderCard(x, i+1)).join("")
+                      : renderEmpty("No sustained consensus yet. Monitoring CORE candidates…");
+
+    document.getElementById("stable-list").innerHTML =
+      stableList.length ? stableList.map((x, i) => renderCard(x, i+1)).join("")
+                        : renderEmpty("No stable consensus yet. Signals need time to stabilize…");
+
+    document.getElementById("early-list").innerHTML =
+      earlyList.length ? earlyList.map((x, i) => renderCard(x, i+1)).join("")
+                       : renderEmpty("No early signals right now. Hunter is scanning…");
+
+    setZoneMeta(coreAll.length, stableAll.length, earlyAll.length, js.counts?.total ?? (coreAll.length + stableAll.length + earlyAll.length));
+    document.getElementById("last-update").innerText = "just now";
+
+    __firstFeed = false;
+  }
+
+  // -------- Next scan countdown --------
+  function tick(){
+    secondsLeft -= 1;
+    if (secondsLeft <= 0) secondsLeft = Math.floor(REFRESH_MS / 1000);
+    document.getElementById("next-scan").innerText = `${secondsLeft}s`;
+  }
+
+  // -------- Timeline Modal (Product-style) --------
+  const backdrop = document.getElementById("modal-backdrop");
+  const toggleBtn = document.getElementById("modal-toggle");
+  const hintEl = document.getElementById("modal-hint");
+
+  let TL_ALL = false;
+  let TL_CACHE = [];
+
+  document.getElementById("modal-close").onclick = () => closeTimeline();
+  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) closeTimeline(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeTimeline(); });
+
+  toggleBtn.onclick = () => {
+    TL_ALL = !TL_ALL;
+    toggleBtn.innerText = TL_ALL ? "Show key events" : "Show all events";
+    renderTimeline(TL_ALL ? TL_CACHE : pickKeyEvents(TL_CACHE));
+    hintEl.innerText = TL_ALL ? `Showing ${TL_CACHE.length} events`
+                              : `Showing key events · total ${TL_CACHE.length}`;
+  };
+
+  function badgeType(event){
+    if (!event) return "audit";
+    if (event.startsWith("CONSENSUS_")) return "consensus";
+    if (event.includes("RUG") || event.includes("RISK") || event.includes("DUMP") || event.includes("DROP")) return "risk";
+    return "audit";
+  }
+
+  function prettyEventName(evt){
+    const map = {
+      "FIRST_AUDIT_DONE": "Initial audit completed",
+      "FIRST_PASSED": "Passed initial threshold",
+      "CONSENSUS_FORMING": "Consensus forming confirmed",
+      "CONSENSUS_STABLE": "Consensus stabilized",
+      "CONSENSUS_CORE": "Core consensus established"
+    };
+    return map[evt] || (evt || "").replaceAll("_"," ");
+  }
+
+  function buildSummary(evt, p){
+    p = p || {};
+    if (evt === "FIRST_AUDIT_DONE"){
+      const parts = [];
+      if (p.score != null) parts.push(`Score ${p.score}`);
+      if (p.liq_usd != null) parts.push(`Liquidity ${fmtUSD(p.liq_usd)}`);
+      if (p.smart_money_count != null) parts.push(`Smart ${p.smart_money_count}`);
+      if (p.status) parts.push(`Status ${p.status}`);
+      return parts.join(" · ") || "Audit completed";
+    }
+    if (evt === "FIRST_PASSED"){
+      return `Score ${p.score ?? "—"} · Threshold passed`;
+    }
+    if (evt === "CONSENSUS_FORMING" || evt === "GreatSTABLE" || evt === "CONSENSUS_STABLE" || evt === "CONSENSUS_CORE"){
+      const mins = p.minutes_sustained ?? "—";
+      const tier = p.tier ?? evt.replace("CONSENSUS_","");
+      return `Tier ${tier} · Sustained ${mins} minutes`;
+    }
+    return "";
+  }
+
+  function buildKVs(evt, p){
+    p = p || {};
+    const kvs = [];
+    if (p.symbol) kvs.push(`$${p.symbol}`);
+    if (p.liq_usd != null) kvs.push(`LIQ ${fmtUSD(p.liq_usd)}`);
+    if (p.smart_money_count != null) kvs.push(`SMART ${p.smart_money_count}`);
+    if (p.score != null) kvs.push(`SCORE ${p.score}`);
+    if (p.source === "backfill") kvs.push(`HISTORICAL`);
+    return kvs;
+  }
+
+  function pickKeyEvents(all){
+    const keySet = new Set(["FIRST_AUDIT_DONE","FIRST_PASSED","CONSENSUS_FORMING","CONSENSUS_STABLE","CONSENSUS_CORE"]);
+    const key = all.filter(x => keySet.has(x.event));
+    const latest = [...all].sort((a,b)=> new Date(b.created_at) - new Date(a.created_at)).slice(0,3);
+
+    const merged = [...key, ...latest];
+    const seen = new Set();
+    const out = [];
+    for(const x of merged){
+      const k = `${x.event}|${x.created_at}`;
+      if(seen.has(k)) continue;
+      seen.add(k);
+      out.push(x);
+    }
+    out.sort((a,b)=> new Date(a.created_at) - new Date(b.created_at));
+    return out;
+  }
+
+  function renderTimeline(list){
+    const el = document.getElementById("modal-content");
+
+    if (!list || !list.length){
+      el.innerHTML = `<div class="loading"><span class="spinner"></span>No timeline yet. (Brain will write events after next audits.)</div>`;
+      return;
+    }
+
+    el.innerHTML = list.map(row => {
+      const evt = row.event;
+      const p = row.payload || {};
+      const type = badgeType(evt);
+      const title = prettyEventName(evt);
+      const summary = buildSummary(evt, p);
+      const kvs = buildKVs(evt, p);
+      const json = JSON.stringify(p, null, 2);
+
+      return `
+        <div class="tl-item">
+          <div class="tl-top">
+            <div class="tl-left">
+              <span class="tl-badge ${type}">${type.toUpperCase()}</span>
+              <div class="tl-title" title="${safeAttr(title)}">${safeAttr(title)}</div>
+            </div>
+            <div class="tl-time">${relTime(row.created_at)} · ${fmtTime(row.created_at)}</div>
+          </div>
+
+          ${summary ? `<div class="tl-summary">${safeAttr(summary)}</div>` : ``}
+
+          ${kvs.length ? `<div class="tl-kvs">${kvs.map(x => `<span class="tl-kv">${safeAttr(x)}</span>`).join("")}</div>` : ``}
+
+          <details class="tl-details">
+            <summary>Proof (raw payload)</summary>
+            <div class="tl-json">${safeAttr(json)}</div>
+          </details>
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function openTimeline(ca, symbol){
+    document.getElementById("modal-title").innerText = `Timeline · $${symbol || "???"}`;
+    document.getElementById("modal-sub").innerText = ca;
+    document.getElementById("modal-content").innerHTML = `<div class="loading"><span class="spinner"></span>Loading timeline…</div>`;
+    backdrop.style.display = "flex";
+
+    // analytics
+    track("open_timeline", { ca });
+
+    TL_ALL = false;
+    TL_CACHE = [];
+    toggleBtn.disabled = true;
+    toggleBtn.innerText = "Show all events";
+    hintEl.innerText = "—";
+
+    try{
+      const r = await fetch(`/api/timeline?ca=${encodeURIComponent(ca)}&limit=200`, { cache: "no-store" });
+      const js = await r.json();
+
+      if (!js.ok){
+        document.getElementById("modal-content").innerHTML =
+          `<div class="loading"><span class="spinner"></span>Failed to load timeline: ${safeAttr(js.error || "unknown error")}${js.details ? "<br/><br/>" + safeAttr(js.details) : ""}</div>`;
+        return;
+      }
+
+      TL_CACHE = js.timeline || [];
+      if (!TL_CACHE.length){
+        renderTimeline([]);
+        return;
+      }
+
+      renderTimeline(pickKeyEvents(TL_CACHE));
+      toggleBtn.disabled = false;
+      hintEl.innerText = `Showing key events · total ${TL_CACHE.length}`;
+
+    } catch (e){
+      console.error(e);
+      document.getElementById("modal-content").innerHTML =
+        `<div class="loading"><span class="spinner"></span>Failed to load timeline (network error).</div>`;
+    }
+  }
+
+  function closeTimeline(){
+    backdrop.style.display = "none";
+    TL_ALL = false;
+    TL_CACHE = [];
+    toggleBtn.disabled = true;
+    toggleBtn.innerText = "Show all events";
+    hintEl.innerText = "—";
+  }
+
+  // -------- Feedback modal --------
+  const fbBackdrop = document.getElementById("fb-backdrop");
+  const fbTitle = document.getElementById("fb-title");
+  const fbEmail = document.getElementById("fb-email");
+  const fbMessage = document.getElementById("fb-message");
+  const fbSendBtn = document.getElementById("fb-send");
+  let fbKind = "feedback";
+
+  function openFeedback(kind){
+    fbKind = kind || "feedback";
+    fbTitle.innerText = fbKind === "waitlist" ? "Join Waitlist" : "Feedback";
+    fbMessage.placeholder = fbKind === "waitlist"
+      ? "What would you use Banana Radar for? What alerts would matter to you?"
+      : "What do you want Banana Radar to do for you?";
+    fbBackdrop.style.display = "flex";
+    fbEmail.focus();
+    track(fbKind === "waitlist" ? "open_waitlist" : "open_feedback");
+  }
+
+  function closeFeedback(){
+    fbBackdrop.style.display = "none";
+    fbKind = "feedback";
+    fbSendBtn.disabled = false;
+    fbSendBtn.innerText = "Send";
+  }
+
+  document.getElementById("btn-waitlist").onclick = () => openFeedback("waitlist");
+  document.getElementById("btn-feedback").onclick = () => openFeedback("feedback");
+  document.getElementById("fb-close").onclick = () => closeFeedback();
+  document.getElementById("fb-cancel").onclick = () => closeFeedback();
+  fbBackdrop.addEventListener("click", (e) => { if (e.target === fbBackdrop) closeFeedback(); });
+
+  async function sendFeedback(){
+    const email = (fbEmail.value || "").trim();
+    const message = (fbMessage.value || "").trim();
+
+    if (message.length < 2 && fbKind !== "waitlist") {
+      toast("Please write at least a short message.");
+      return;
+    }
+
+    const caFromUrl = new URL(location.href).searchParams.get("ca") || null;
+
+    fbSendBtn.disabled = true;
+    fbSendBtn.innerText = "Sending…";
+
+    try{
+      const r = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          kind: fbKind,
+          email,
+          message,
+          page: location.pathname + location.search,
+          ca: caFromUrl,
+          session_id: getSessionId()
+        })
+      });
+      const js = await r.json();
+      if (!js.ok) {
+        toast(`Failed: ${js.error || "unknown"}`);
+        console.warn("feedback failed", js);
+        fbSendBtn.disabled = false;
+        fbSendBtn.innerText = "Send";
+        return;
+      }
+      toast("Sent. Thank you!");
+      fbEmail.value = "";
+      fbMessage.value = "";
+      closeFeedback();
+      track("feedback_sent", { kind: fbKind });
+    } catch(_) {
+      toast("Network error. Try again later.");
+      fbSendBtn.disabled = false;
+      fbSendBtn.innerText = "Send";
+    }
+  }
+
+  fbSendBtn.onclick = () => sendFeedback();
+
+  // -------- Share / Copy handlers (event delegation) --------
+  document.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-action]");
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const ca = btn.dataset.ca || "";
+    if (!ca) return;
+
+    try{
+      if (action === "copy"){
+        await navigator.clipboard.writeText(ca);
+        toast("CA copied");
+        track("copy_token", { ca, kind: "ca" });
+      } else if (action === "share"){
+        const u = new URL(location.href);
+        u.searchParams.set("ca", ca);
+        await navigator.clipboard.writeText(u.toString());
+        toast("Share link copied");
+        track("copy_token", { ca, kind: "link" });
+      }
+    }catch{
+      toast("Copy failed (permission).");
+    }
+  });
+
+  // -------- Zone click tracking --------
+  document.getElementById("zone-core-head").onclick = () => track("view_zone_core");
+  document.getElementById("zone-stable-head").onclick = () => track("view_zone_stable");
+  document.getElementById("zone-early-head").onclick = () => track("view_zone_early");
+
+  // -------- Boot --------
+  (async () => {
+    // analytics: page view
+    track("page_view", pageViewProps());
+
+    await loadThreeZoneFeed();
+
+    document.getElementById("next-scan").innerText = `${secondsLeft}s`;
+    setInterval(tick, 1000);
+
+    setInterval(async () => {
+      secondsLeft = Math.floor(REFRESH_MS / 1000);
+      await loadThreeZoneFeed();
+    }, REFRESH_MS);
+
+    // Auto-open timeline if shared link has ?ca=
+    const ca = new URL(location.href).searchParams.get("ca");
+    if (ca) {
+      openTimeline(ca, "");
+    }
+  })();
+</script>
+
+</body>
+</html>
