@@ -1,16 +1,15 @@
 // /api/feed.js
-// Banana Radar Feed API (RLS-safe)
-// - Reads from Supabase REST using SUPABASE_SERVICE_ROLE_KEY (bypasses RLS)
+// Banana Radar Feed API (RLS-safe, schema-drift tolerant)
+// - Uses SUPABASE_SERVICE_ROLE_KEY (bypasses RLS)
+// - Tries multiple select field sets; if a column doesn't exist, falls back gracefully
 // - Splits tokens into CORE / STABLE / EARLY zones
-// - Compatible with both boolean flags (core_confirmed) and timestamp milestones (core_confirmed_at)
 
 export default async function handler(req, res) {
   try {
     res.setHeader("Content-Type", "application/json; charset=utf-8");
-    // Cache at edge a bit; you can tighten/loosen later
     res.setHeader("Cache-Control", "s-maxage=20, stale-while-revalidate=120");
 
-    const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const SUPABASE_URL = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/+$/, "");
     const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!SUPABASE_URL || !SERVICE_KEY) {
@@ -23,89 +22,151 @@ export default async function handler(req, res) {
 
     const url = new URL(req.url, `https://${req.headers.host}`);
     const limit = Math.min(Math.max(parseInt(url.searchParams.get("limit") || "80", 10), 1), 200);
-
-    // If you want to temporarily widen results for debugging, set ?no_status_filter=1
     const noStatusFilter = url.searchParams.get("no_status_filter") === "1";
 
-    // --- Select fields (be tolerant to schema drift) ---
-    // Add/Remove fields as needed; unknown columns in select will error.
-    // If your schema doesn't have some of these, remove them.
-    const selectFields = [
-      "ca",
-      "symbol",
-      "liq",
-      "banana_score",
-      "smart_money_count",
-      "narrative_log",
-      "created_at",
-      "first_passed_at",
+    // Try from "rich" -> "minimal". If any column doesn't exist, Supabase returns error.
+    const SELECT_CANDIDATES = [
+      // Rich (may not exist in your schema)
+      [
+        "ca",
+        "symbol",
+        "liq",
+        "banana_score",
+        "smart_money_count",
+        "narrative_log",
+        "created_at",
+        "first_passed_at",
+        "forming_confirmed",
+        "stable_confirmed",
+        "core_confirmed",
+        "forming_confirmed_at",
+        "stable_confirmed_at",
+        "core_confirmed_at",
+        "status",
+      ],
+      // Medium (drop *_at)
+      [
+        "ca",
+        "symbol",
+        "liq",
+        "banana_score",
+        "smart_money_count",
+        "narrative_log",
+        "created_at",
+        "first_passed_at",
+        "forming_confirmed",
+        "stable_confirmed",
+        "core_confirmed",
+        "status",
+      ],
+      // Minimal (should match your original working feed)
+      [
+        "ca",
+        "symbol",
+        "liq",
+        "banana_score",
+        "smart_money_count",
+        "narrative_log",
+        "created_at",
+        "first_passed_at",
+        "forming_confirmed",
+        "stable_confirmed",
+        "core_confirmed",
+      ],
+    ];
 
-      // bool flags (your earlier design)
-      "forming_confirmed",
-      "stable_confirmed",
-      "core_confirmed",
+    async function fetchWithSelect(selectArr) {
+      const base = `${SUPABASE_URL}/rest/v1/pending_pool`;
+      const params = new URLSearchParams();
+      params.set("select", selectArr.join(","));
+      params.set("order", "banana_score.desc");
+      params.set("limit", String(limit));
 
-      // timestamp milestones (common alternative)
-      "forming_confirmed_at",
-      "stable_confirmed_at",
-      "core_confirmed_at",
+      // keep prior behavior by default
+      if (!noStatusFilter) params.set("status", "eq.passed");
 
-      // optional but often present
-      "status",
-    ].join(",");
+      const endpoint = `${base}?${params.toString()}`;
 
-    // Build Supabase REST query
-    const base = `${SUPABASE_URL.replace(/\/+$/, "")}/rest/v1/pending_pool`;
-    const params = new URLSearchParams();
-    params.set("select", selectFields);
-    params.set("order", "banana_score.desc");
-    params.set("limit", String(limit));
+      const r = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          apikey: SERVICE_KEY,
+          Authorization: `Bearer ${SERVICE_KEY}`,
+        },
+      });
 
-    // Keep your previous behavior by default: only "passed"
-    // If your CORE/STABLE rows are not "passed", use ?no_status_filter=1 to verify quickly,
-    // then adjust status filter accordingly.
-    if (!noStatusFilter) {
-      params.set("status", "eq.passed");
+      const text = await r.text();
+      return { ok: r.ok, status: r.status, text, endpoint, selectArr };
     }
 
-    const endpoint = `${base}?${params.toString()}`;
+    // Try candidates until success
+    let lastErr = null;
+    let rows = null;
+    let usedSelect = null;
 
-    const r = await fetch(endpoint, {
-      method: "GET",
-      headers: {
-        apikey: SERVICE_KEY,
-        Authorization: `Bearer ${SERVICE_KEY}`,
-      },
-    });
+    for (const selectArr of SELECT_CANDIDATES) {
+      const out = await fetchWithSelect(selectArr);
+      if (out.ok) {
+        rows = out.text ? JSON.parse(out.text) : [];
+        usedSelect = selectArr;
+        lastErr = null;
+        break;
+      } else {
+        lastErr = out; // keep last failure
+        // if status filter caused failure due to missing status column, try again without it
+        // (only if failure mentions status)
+        if (!noStatusFilter && out.text && out.text.toLowerCase().includes("column") && out.text.toLowerCase().includes("status")) {
+          const out2 = await (async () => {
+            const base = `${SUPABASE_URL}/rest/v1/pending_pool`;
+            const params = new URLSearchParams();
+            params.set("select", selectArr.join(","));
+            params.set("order", "banana_score.desc");
+            params.set("limit", String(limit));
+            const endpoint = `${base}?${params.toString()}`;
+            const r = await fetch(endpoint, {
+              method: "GET",
+              headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
+            });
+            const text = await r.text();
+            return { ok: r.ok, status: r.status, text, endpoint, selectArr };
+          })();
 
-    const text = await r.text();
-    if (!r.ok) {
+          if (out2.ok) {
+            rows = out2.text ? JSON.parse(out2.text) : [];
+            usedSelect = selectArr;
+            lastErr = null;
+            break;
+          } else {
+            lastErr = out2;
+          }
+        }
+      }
+    }
+
+    if (!rows) {
       return res.status(500).json({
         ok: false,
-        error: `Supabase query failed (${r.status})`,
-        details: text.slice(0, 1200),
+        error: `Supabase query failed (${lastErr?.status || "unknown"})`,
+        details: (lastErr?.text || "").slice(0, 1200),
+        tried_selects: SELECT_CANDIDATES,
+        last_endpoint: lastErr?.endpoint,
       });
     }
 
-    const rows = text ? JSON.parse(text) : [];
-
-    // --- Zone split helpers ---
+    // --- zone split helpers ---
     const truthy = (v) => {
       if (v === true) return true;
       if (v === 1) return true;
       if (typeof v === "string") {
         const s = v.trim().toLowerCase();
         if (s === "true" || s === "1") return true;
-        // timestamps / non-empty strings should count as truthy for *_at fields
-        if (s.length > 0 && s !== "false" && s !== "0") return true;
+        if (s.length > 0 && s !== "false" && s !== "0") return true; // timestamps/non-empty
       }
-      // numbers > 0 could be used; be conservative
       return false;
     };
 
     const isCore = (it) => truthy(it.core_confirmed) || truthy(it.core_confirmed_at);
     const isStable = (it) => truthy(it.stable_confirmed) || truthy(it.stable_confirmed_at);
-    const isForming = (it) => truthy(it.forming_confirmed) || truthy(it.forming_confirmed_at);
 
     const core = [];
     const stable = [];
@@ -117,9 +178,6 @@ export default async function handler(req, res) {
       else early.push(it);
     }
 
-    // Optional: ensure deterministic ordering per zone (already ordered globally by score,
-    // but filtering can preserve order; we keep it as-is).
-
     return res.status(200).json({
       ok: true,
       counts: {
@@ -129,6 +187,10 @@ export default async function handler(req, res) {
         total: rows.length,
       },
       zones: { core, stable, early },
+      meta: {
+        used_select: usedSelect,
+        status_filter_applied: !noStatusFilter,
+      },
       ts: new Date().toISOString(),
     });
   } catch (e) {
