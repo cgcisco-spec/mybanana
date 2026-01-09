@@ -5,9 +5,8 @@ export default async function handler(req, res) {
     // CDN 缓存：60 秒，后台可“过期继续用” 5 分钟（更稳、更省）
     res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=300");
 
-    const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const SUPABASE_ANON_KEY =
-      process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
       return res.status(500).json({ ok: false, error: "Missing Supabase env vars." });
