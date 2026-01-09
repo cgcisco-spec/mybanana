@@ -3,15 +3,18 @@ export default async function handler(req, res) {
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.setHeader("Cache-Control", "no-store");
 
-    if (req.method !== "POST") {
-      return res.status(405).json({ ok: false, error: "Method not allowed" });
-    }
+    if (req.method === "OPTIONS") return res.status(200).json({ ok: true });
+    if (req.method !== "POST") return res.status(405).json({ ok: false, error: "Method not allowed" });
 
     const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
     const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!SUPABASE_URL || !SERVICE_KEY) {
-      return res.status(500).json({ ok: false, error: "Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY" });
+      return res.status(500).json({
+        ok: false,
+        error: "Missing env vars",
+        details: { hasUrl: !!SUPABASE_URL, hasServiceKey: !!SERVICE_KEY },
+      });
     }
 
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
@@ -32,14 +35,18 @@ export default async function handler(req, res) {
         apikey: SERVICE_KEY,
         Authorization: `Bearer ${SERVICE_KEY}`,
         "Content-Type": "application/json",
-        Prefer: "return=minimal",
+        Prefer: "return=representation",
       },
       body: JSON.stringify([{ session_id, event, props, ua, ip }]),
     });
 
+    const text = await r.text();
     if (!r.ok) {
-      const text = await r.text();
-      return res.status(500).json({ ok: false, error: `Insert failed: ${r.status}`, details: text.slice(0, 500) });
+      return res.status(500).json({
+        ok: false,
+        error: `Supabase insert failed (${r.status})`,
+        details: text.slice(0, 1000),
+      });
     }
 
     return res.status(200).json({ ok: true });
