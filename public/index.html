@@ -246,7 +246,15 @@
       word-break:break-word;
     }
 
-    footer{margin-top:18px;font-size:.62rem;color:var(--muted);text-align:center;line-height:1.4}
+    /* Footer */
+    footer{margin-top:18px;font-size:.62rem;color:var(--muted);text-align:center;line-height:1.5}
+    footer a{
+      color:rgba(147,197,253,.95);
+      text-decoration:none;
+      border-bottom:1px solid rgba(147,197,253,.25);
+    }
+    footer a:hover{filter:brightness(1.08)}
+    .foot-links{display:inline-flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center}
 
     /* ========== Timeline Modal (scroll + summary + proof) ========== */
     .modal-backdrop{
@@ -519,9 +527,14 @@
 
     </div>
 
+    <!-- Updated Footer (formal + docs links) -->
     <footer>
-      Signals are formed, tested, and invalidated over time.<br/>
-      This system does not predict outcomes.
+      Banana Radar is an observational system. It does not provide financial advice, trading signals, or price predictions.<br/>
+      <span class="foot-links">
+        <a href="/docs/methodology.html">Methodology</a>
+        ·
+        <a href="/docs/core-disclaimer.html">CORE Disclaimer</a>
+      </span>
     </footer>
   </div>
 
