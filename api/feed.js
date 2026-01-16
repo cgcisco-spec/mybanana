@@ -1,36 +1,36 @@
 // /api/feed.js
-// Banana Radar Feed API (Zone-first)
-// - Uses SUPABASE_SERVICE_ROLE_KEY (bypasses RLS)
-// - Queries CORE / STABLE / EARLY separately so each zone always has the right tokens
-// - Stable definition: stable_confirmed=true AND core_confirmed!=true
-// - Early definition: neither stable nor core (both not true)
-// - Keeps status=passed filter by default (can disable via ?no_status_filter=1)
+import { createClient } from "@supabase/supabase-js";
+
+function intParam(v, defVal) {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) && n > 0 ? n : defVal;
+}
 
 export default async function handler(req, res) {
+  // Make feed move (avoid Vercel / browser cache)
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+
   try {
-    res.setHeader("Content-Type", "application/json; charset=utf-8");
-    res.setHeader("Cache-Control", "s-maxage=20, stale-while-revalidate=120");
+    const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    const SUPABASE_URL = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/+$/, "");
-    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!SUPABASE_URL || !SERVICE_KEY) {
+    if (!SUPABASE_URL || !SERVICE_ROLE) {
       return res.status(500).json({
         ok: false,
-        error: "Missing env vars. Need SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.",
-        details: { hasUrl: !!SUPABASE_URL, hasServiceRole: !!SERVICE_KEY },
+        error: "Missing env SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY",
+        has_url: !!SUPABASE_URL,
+        has_service_role: !!SERVICE_ROLE,
       });
     }
 
-    const url = new URL(req.url, `https://${req.headers.host}`);
+    const sb = createClient(SUPABASE_URL, SERVICE_ROLE, {
+      auth: { persistSession: false },
+    });
 
-    // Per-zone limit; total payload size stays reasonable
-    const perZone = Math.min(Math.max(parseInt(url.searchParams.get("per_zone") || "30", 10), 1), 200);
-    const noStatusFilter = url.searchParams.get("no_status_filter") === "1";
+    const limit = intParam(req.query.limit, 80);
+    const perZone = Math.max(1, Math.floor(limit / 3));
 
-    // Shared select list: keep it aligned with your table columns
-    // (From your API response, these columns exist.)
-    const selectFields = [
+    const selectCols = [
       "ca",
       "symbol",
       "liq",
@@ -43,61 +43,54 @@ export default async function handler(req, res) {
       "stable_confirmed",
       "core_confirmed",
       "status",
+      "source",
     ].join(",");
 
-    const base = `${SUPABASE_URL}/rest/v1/pending_pool`;
+    // Base: only what Brain already marked as passed
+    const base = () =>
+      sb.from("pending_pool").select(selectCols).eq("status", "passed");
 
-    async function sbSelect(whereParams, limit) {
-      const params = new URLSearchParams();
-      params.set("select", selectFields);
-      params.set("order", "banana_score.desc");
-      params.set("limit", String(limit));
+    // Sorting policy (方案 B):
+    // 1) banana_score desc (强者在上)
+    // 2) created_at desc (轻微滚动，让新token在同分/相近分更靠前)
+    // 3) first_passed_at desc (兜底)
+    const applySort = (q) =>
+      q
+        .order("banana_score", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false, nullsFirst: false })
+        .order("first_passed_at", { ascending: false, nullsFirst: false });
 
-      if (!noStatusFilter) params.set("status", "eq.passed");
+    // Mutual-exclusive zones aligned to Brain meaning
+    const qCore = applySort(base().eq("core_confirmed", true)).limit(perZone);
 
-      // apply where params (Supabase REST filters)
-      for (const [k, v] of Object.entries(whereParams)) params.set(k, v);
+    const qStable = applySort(
+      base()
+        .eq("stable_confirmed", true)
+        .eq("core_confirmed", false)
+    ).limit(perZone);
 
-      const endpoint = `${base}?${params.toString()}`;
+    const qEarly = applySort(
+      base()
+        .eq("forming_confirmed", true)
+        .eq("stable_confirmed", false)
+        .eq("core_confirmed", false)
+    ).limit(perZone);
 
-      const r = await fetch(endpoint, {
-        method: "GET",
-        headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
+    const [coreRes, stableRes, earlyRes] = await Promise.all([qCore, qStable, qEarly]);
+
+    const err = coreRes.error || stableRes.error || earlyRes.error;
+    if (err) {
+      return res.status(500).json({
+        ok: false,
+        stage: "query",
+        error: err.message,
+        details: err,
       });
-
-      const text = await r.text();
-      if (!r.ok) {
-        throw new Error(`Supabase ${r.status}: ${text.slice(0, 800)}`);
-      }
-      return text ? JSON.parse(text) : [];
     }
 
-    // ---------------------------
-    // Zone-first queries
-    // ---------------------------
-    // CORE: core_confirmed = true
-    const corePromise = sbSelect({ core_confirmed: "eq.true" }, perZone);
-
-    // STABLE: stable_confirmed = true AND core_confirmed != true
-    // Use "not.is.true" to include false and null values.
-    const stablePromise = sbSelect(
-  {
-    stable_confirmed: "eq.true",
-    or: "(core_confirmed.eq.false,core_confirmed.is.null)",
-  },
-  perZone
-);
-
-    // EARLY: stable_confirmed != true AND core_confirmed != true
-   const earlyPromise = sbSelect(
-  {
-    forming_confirmed: "eq.true",
-    or: "(stable_confirmed.eq.false,stable_confirmed.is.null,core_confirmed.eq.false,core_confirmed.is.null)",
-  },
-  perZone
-);
-
-    const [core, stable, early] = await Promise.all([corePromise, stablePromise, earlyPromise]);
+    const core = coreRes.data || [];
+    const stable = stableRes.data || [];
+    const early = earlyRes.data || [];
 
     return res.status(200).json({
       ok: true,
@@ -110,12 +103,23 @@ export default async function handler(req, res) {
       zones: { core, stable, early },
       meta: {
         per_zone: perZone,
-        status_filter_applied: !noStatusFilter,
-        order: "banana_score.desc",
+        used_select: selectCols.split(","),
+        filter: {
+          status: "passed",
+          core: "core_confirmed = true",
+          stable: "stable_confirmed = true AND core_confirmed = false",
+          early: "forming_confirmed = true AND stable_confirmed = false AND core_confirmed = false",
+          source_filter: "NONE (allow NULL)",
+        },
+        sort: ["banana_score desc", "created_at desc", "first_passed_at desc"],
       },
       ts: new Date().toISOString(),
     });
   } catch (e) {
-    return res.status(500).json({ ok: false, error: String(e) });
+    return res.status(500).json({
+      ok: false,
+      stage: "exception",
+      error: String(e?.message || e),
+    });
   }
 }
