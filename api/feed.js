@@ -81,15 +81,21 @@ export default async function handler(req, res) {
     // STABLE: stable_confirmed = true AND core_confirmed != true
     // Use "not.is.true" to include false and null values.
     const stablePromise = sbSelect(
-      { stable_confirmed: "eq.true", core_confirmed: "not.is.true" },
-      perZone
-    );
+  {
+    stable_confirmed: "eq.true",
+    or: "(core_confirmed.eq.false,core_confirmed.is.null)",
+  },
+  perZone
+);
 
     // EARLY: stable_confirmed != true AND core_confirmed != true
-    const earlyPromise = sbSelect(
-      { stable_confirmed: "not.is.true", core_confirmed: "not.is.true" },
-      perZone
-    );
+   const earlyPromise = sbSelect(
+  {
+    forming_confirmed: "eq.true",
+    or: "(stable_confirmed.eq.false,stable_confirmed.is.null,core_confirmed.eq.false,core_confirmed.is.null)",
+  },
+  perZone
+);
 
     const [core, stable, early] = await Promise.all([corePromise, stablePromise, earlyPromise]);
 
