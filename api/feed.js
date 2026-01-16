@@ -1,36 +1,34 @@
 // /api/feed.js
-import { createClient } from "@supabase/supabase-js";
-
-function intParam(v, defVal) {
-  const n = parseInt(v, 10);
-  return Number.isFinite(n) && n > 0 ? n : defVal;
-}
+// Banana Radar Feed API (zone-first, mutual-exclusive)
+// - No dependencies (no supabase-js) -> avoids ESM/CJS runtime issues on Vercel
+// - Uses SUPABASE_SERVICE_ROLE_KEY (bypasses RLS)
+// - Sorting: banana_score desc, created_at desc, first_passed_at desc (keeps "strongest on top" but moves more)
 
 export default async function handler(req, res) {
-  // Make feed move (avoid Vercel / browser cache)
+  // Always return JSON (even when error)
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
 
   try {
-    const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-    const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const SUPABASE_URL = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/+$/, "");
+    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!SUPABASE_URL || !SERVICE_ROLE) {
+    if (!SUPABASE_URL || !SERVICE_KEY) {
       return res.status(500).json({
         ok: false,
-        error: "Missing env SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY",
-        has_url: !!SUPABASE_URL,
-        has_service_role: !!SERVICE_ROLE,
+        stage: "env",
+        error: "Missing env vars: SUPABASE_URL (or VITE_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY",
+        has_SUPABASE_URL: !!SUPABASE_URL,
+        has_SERVICE_ROLE: !!SERVICE_KEY,
       });
     }
 
-    const sb = createClient(SUPABASE_URL, SERVICE_ROLE, {
-      auth: { persistSession: false },
-    });
-
-    const limit = intParam(req.query.limit, 80);
+    const url = new URL(req.url, `https://${req.headers.host}`);
+    const limit = Math.min(Math.max(parseInt(url.searchParams.get("limit") || "80", 10), 1), 300);
     const perZone = Math.max(1, Math.floor(limit / 3));
 
-    const selectCols = [
+    // Columns (keep aligned with pending_pool)
+    const selectFields = [
       "ca",
       "symbol",
       "liq",
@@ -46,51 +44,74 @@ export default async function handler(req, res) {
       "source",
     ].join(",");
 
-    // Base: only what Brain already marked as passed
-    const base = () =>
-      sb.from("pending_pool").select(selectCols).eq("status", "passed");
+    const base = `${SUPABASE_URL}/rest/v1/pending_pool`;
 
-    // Sorting policy (方案 B):
-    // 1) banana_score desc (强者在上)
-    // 2) created_at desc (轻微滚动，让新token在同分/相近分更靠前)
-    // 3) first_passed_at desc (兜底)
-    const applySort = (q) =>
-      q
-        .order("banana_score", { ascending: false, nullsFirst: false })
-        .order("created_at", { ascending: false, nullsFirst: false })
-        .order("first_passed_at", { ascending: false, nullsFirst: false });
+    async function sbSelect(whereParams, lim) {
+      const params = new URLSearchParams();
+      params.set("select", selectFields);
+      params.set("status", "eq.passed");
+      params.set("limit", String(lim));
 
-    // Mutual-exclusive zones aligned to Brain meaning
-    const qCore = applySort(base().eq("core_confirmed", true)).limit(perZone);
+      // Multi-order (append, not set)
+      params.append("order", "banana_score.desc");
+      params.append("order", "created_at.desc");
+      params.append("order", "first_passed_at.desc");
 
-    const qStable = applySort(
-      base()
-        .eq("stable_confirmed", true)
-        .eq("core_confirmed", false)
-    ).limit(perZone);
+      for (const [k, v] of Object.entries(whereParams)) params.set(k, v);
 
-    const qEarly = applySort(
-      base()
-        .eq("forming_confirmed", true)
-        .eq("stable_confirmed", false)
-        .eq("core_confirmed", false)
-    ).limit(perZone);
+      const endpoint = `${base}?${params.toString()}`;
 
-    const [coreRes, stableRes, earlyRes] = await Promise.all([qCore, qStable, qEarly]);
-
-    const err = coreRes.error || stableRes.error || earlyRes.error;
-    if (err) {
-      return res.status(500).json({
-        ok: false,
-        stage: "query",
-        error: err.message,
-        details: err,
+      const r = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          apikey: SERVICE_KEY,
+          Authorization: `Bearer ${SERVICE_KEY}`,
+        },
       });
+
+      const text = await r.text();
+
+      // Supabase REST returns JSON on success; on error returns JSON too but keep it safe
+      if (!r.ok) {
+        return { __error: { status: r.status, body: text.slice(0, 1200), endpoint } };
+      }
+
+      try {
+        return text ? JSON.parse(text) : [];
+      } catch (e) {
+        return { __error: { status: r.status, body: text.slice(0, 1200), endpoint, parse_error: String(e) } };
+      }
     }
 
-    const core = coreRes.data || [];
-    const stable = stableRes.data || [];
-    const early = earlyRes.data || [];
+    // Mutual-exclusive zones (Brain-aligned)
+    // CORE: core_confirmed=true
+    const corePromise = sbSelect({ core_confirmed: "eq.true" }, perZone);
+
+    // STABLE: stable_confirmed=true AND core_confirmed=false
+    // (After你做过 backfill，这里应该是明确 false，不需要把 null 也算进来)
+    const stablePromise = sbSelect(
+      { stable_confirmed: "eq.true", core_confirmed: "eq.false" },
+      perZone
+    );
+
+    // EARLY: forming_confirmed=true AND stable_confirmed=false AND core_confirmed=false
+    const earlyPromise = sbSelect(
+      { forming_confirmed: "eq.true", stable_confirmed: "eq.false", core_confirmed: "eq.false" },
+      perZone
+    );
+
+    const [core, stable, early] = await Promise.all([corePromise, stablePromise, earlyPromise]);
+
+    // If any zone returned error object, surface it clearly
+    const zoneErr = [core, stable, early].find((x) => x && x.__error);
+    if (zoneErr) {
+      return res.status(500).json({
+        ok: false,
+        stage: "supabase",
+        error: "Supabase REST query failed",
+        details: zoneErr.__error,
+      });
+    }
 
     return res.status(200).json({
       ok: true,
@@ -103,23 +124,18 @@ export default async function handler(req, res) {
       zones: { core, stable, early },
       meta: {
         per_zone: perZone,
-        used_select: selectCols.split(","),
         filter: {
           status: "passed",
-          core: "core_confirmed = true",
-          stable: "stable_confirmed = true AND core_confirmed = false",
-          early: "forming_confirmed = true AND stable_confirmed = false AND core_confirmed = false",
-          source_filter: "NONE (allow NULL)",
+          core: "core_confirmed=true",
+          stable: "stable_confirmed=true AND core_confirmed=false",
+          early: "forming_confirmed=true AND stable_confirmed=false AND core_confirmed=false",
         },
         sort: ["banana_score desc", "created_at desc", "first_passed_at desc"],
       },
       ts: new Date().toISOString(),
     });
   } catch (e) {
-    return res.status(500).json({
-      ok: false,
-      stage: "exception",
-      error: String(e?.message || e),
-    });
+    // Catch runtime errors (syntax/import errors won't reach here, but normal runtime will)
+    return res.status(500).json({ ok: false, stage: "exception", error: String(e?.message || e) });
   }
 }
